@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -14,24 +14,56 @@ interface VoiceRecorderProps {
 
 export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const { toast } = useToast();
 
-  const startRecording = () => {
+  useEffect(() => {
+    // Check if browser supports SpeechRecognition
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Speech recognition is not supported in your browser",
+        title: "Browser Not Supported",
+        description: "Speech recognition is not supported in your browser. Please use Chrome or Edge.",
       });
       return;
     }
 
+    // Check microphone permission
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => setHasMicPermission(true))
+      .catch(() => setHasMicPermission(false));
+  }, [toast]);
+
+  const startRecording = async () => {
+    if (!hasMicPermission) {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        setHasMicPermission(true);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Microphone Access Denied",
+          description: "Please allow microphone access to use voice recording.",
+        });
+        return;
+      }
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognitionInstance = new SpeechRecognition();
+
     recognitionInstance.lang = "hi-IN";
     recognitionInstance.continuous = true;
     recognitionInstance.interimResults = true;
+
+    recognitionInstance.onstart = () => {
+      toast({
+        title: "Recording Started",
+        description: "Speak in Hindi...",
+      });
+      setIsRecording(true);
+    };
 
     recognitionInstance.onresult = async (event) => {
       const transcript = Array.from(event.results)
@@ -49,7 +81,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
           toast({
             variant: "destructive",
             title: "Translation Error",
-            description: "Failed to translate the text",
+            description: "Failed to translate the text. Please try again.",
           });
         }
       }
@@ -59,14 +91,29 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
       toast({
         variant: "destructive",
         title: "Recording Error",
-        description: event.error,
+        description: `Error: ${event.error}. Please try again.`,
       });
       stopRecording();
     };
 
-    recognitionInstance.start();
-    setRecognition(recognitionInstance);
-    setIsRecording(true);
+    recognitionInstance.onend = () => {
+      setIsRecording(false);
+      toast({
+        title: "Recording Ended",
+        description: "Processing your speech...",
+      });
+    };
+
+    try {
+      recognitionInstance.start();
+      setRecognition(recognitionInstance);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to start recording. Please try again.",
+      });
+    }
   };
 
   const stopRecording = () => {
@@ -84,6 +131,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
         variant={isRecording ? "destructive" : "default"}
         onClick={isRecording ? stopRecording : startRecording}
         className="w-40 h-40 rounded-full"
+        disabled={hasMicPermission === false}
       >
         {isRecording ? (
           <StopCircle className="h-16 w-16" />
@@ -92,7 +140,11 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
         )}
       </Button>
       <p className="text-sm text-muted-foreground">
-        {isRecording ? "Recording... Click to stop" : "Click to start recording"}
+        {hasMicPermission === false
+          ? "Microphone access denied. Please check browser permissions."
+          : isRecording
+          ? "Recording... Click to stop"
+          : "Click to start recording"}
       </p>
     </div>
   );
