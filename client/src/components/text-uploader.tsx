@@ -24,7 +24,7 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -52,13 +52,13 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
         }
 
         if (!data.text?.trim()) {
-          throw new Error('No Hindi text was found in the image');
+          throw new Error('No Hindi text could be detected in the image. Please ensure the image is clear and contains Hindi text.');
         }
 
         setText(data.text);
         toast({
           title: "Success",
-          description: "Text extracted from image successfully",
+          description: "Text extracted from image successfully! You can now translate it.",
         });
       } else {
         // Handle text file
@@ -74,13 +74,13 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
             setText(content);
             toast({
               title: "Success",
-              description: "Text file loaded successfully",
+              description: "Text file loaded successfully! You can now translate it.",
             });
           } else {
             toast({
               variant: "destructive",
               title: "Error",
-              description: "The file appears to be empty",
+              description: "The file appears to be empty. Please upload a file containing Hindi text.",
             });
           }
         };
@@ -90,7 +90,7 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process the file",
+        description: error instanceof Error ? error.message : "Failed to process the file. Please try a different image or ensure it contains clear Hindi text.",
       });
       setText("");
     } finally {

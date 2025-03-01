@@ -47,21 +47,24 @@ async function translateWords(text: string) {
 
 async function performOCR(imageBuffer: Buffer): Promise<string> {
   try {
+    // Convert image buffer to base64
+    const base64Image = imageBuffer.toString('base64');
+
     const formData = new FormData();
     formData.append('apikey', process.env.OCR_SPACE_API_KEY);
     formData.append('language', 'hin'); // Hindi language
-    formData.append('file', imageBuffer, { filename: 'image.jpg' });
+    formData.append('base64Image', `data:image/jpeg;base64,${base64Image}`);
     formData.append('detectOrientation', 'true');
     formData.append('scale', 'true');
     formData.append('OCREngine', '2'); // More accurate engine
-
-    const headers = formData.getHeaders();
+    formData.append('isTable', 'false');
+    formData.append('filetype', 'jpg');
 
     const response = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
-        ...headers,
         'apikey': process.env.OCR_SPACE_API_KEY,
+        'Content-Type': 'multipart/form-data'
       },
       body: formData,
     });
@@ -77,7 +80,13 @@ async function performOCR(imageBuffer: Buffer): Promise<string> {
       throw new Error('No text found in image');
     }
 
-    return result.ParsedResults[0].ParsedText;
+    const extractedText = result.ParsedResults[0].ParsedText;
+
+    if (!extractedText.trim()) {
+      throw new Error('No text was found in the image');
+    }
+
+    return extractedText;
   } catch (error) {
     console.error('OCR error:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to extract text from image');
