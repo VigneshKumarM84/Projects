@@ -55,21 +55,32 @@ async function performOCR(imageBuffer: Buffer): Promise<string> {
     formData.append('scale', 'true');
     formData.append('OCREngine', '2'); // More accurate engine
 
+    const headers = formData.getHeaders();
+
     const response = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
-      body: formData as any,
+      headers: {
+        ...headers,
+        'apikey': process.env.OCR_SPACE_API_KEY,
+      },
+      body: formData,
     });
 
     const result = await response.json();
+    console.log('OCR Response:', result); // Debug log
 
-    if (!response.ok || result.OCRExitCode !== 1) {
-      throw new Error(result.ErrorMessage || 'OCR failed');
+    if (!response.ok) {
+      throw new Error(`OCR API error: ${result.ErrorMessage || response.statusText}`);
+    }
+
+    if (!result.ParsedResults || result.ParsedResults.length === 0) {
+      throw new Error('No text found in image');
     }
 
     return result.ParsedResults[0].ParsedText;
   } catch (error) {
     console.error('OCR error:', error);
-    throw new Error('Failed to extract text from image');
+    throw new Error(error instanceof Error ? error.message : 'Failed to extract text from image');
   }
 }
 
@@ -137,19 +148,29 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // New endpoint for OCR
+  // OCR endpoint
   app.post("/api/ocr", upload.single('image'), async (req, res) => {
     try {
       if (!req.file) {
-        throw new Error('No image file uploaded');
+        return res.status(400).json({ message: 'No image file uploaded' });
+      }
+
+      if (!req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({ message: 'Uploaded file is not an image' });
       }
 
       const extractedText = await performOCR(req.file.buffer);
 
+      if (!extractedText.trim()) {
+        return res.status(400).json({ message: 'No text was found in the image' });
+      }
+
       res.json({ text: extractedText });
     } catch (error) {
       console.error('OCR error:', error);
-      res.status(500).json({ message: "Failed to process image" });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to process image" 
+      });
     }
   });
 

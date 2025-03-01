@@ -35,19 +35,54 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
         const formData = new FormData();
         formData.append('image', file);
 
+        toast({
+          title: "Processing Image",
+          description: "Extracting text from your image...",
+        });
+
         const response = await fetch('/api/ocr', {
           method: 'POST',
           body: formData,
         });
 
-        if (!response.ok) throw new Error('OCR failed');
         const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'OCR failed');
+        }
+
+        if (!data.text?.trim()) {
+          throw new Error('No Hindi text was found in the image');
+        }
+
         setText(data.text);
+        toast({
+          title: "Success",
+          description: "Text extracted from image successfully",
+        });
       } else {
         // Handle text file
+        toast({
+          title: "Processing File",
+          description: "Reading text file...",
+        });
+
         const reader = new FileReader();
         reader.onload = (e) => {
-          setText(e.target?.result as string);
+          const content = e.target?.result as string;
+          if (content.trim()) {
+            setText(content);
+            toast({
+              title: "Success",
+              description: "Text file loaded successfully",
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "The file appears to be empty",
+            });
+          }
         };
         reader.readAsText(file);
       }
@@ -55,8 +90,9 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to process the file. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to process the file",
       });
+      setText("");
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +115,10 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
       });
       const translations = await response.json();
       onTranslationComplete(translations);
+      toast({
+        title: "Success",
+        description: "Text translated successfully",
+      });
     } catch (error) {
       toast({
         variant: "destructive",
