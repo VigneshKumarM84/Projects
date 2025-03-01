@@ -11,7 +11,7 @@ interface TextUploaderProps {
     hindi: string;
     english: string;
     tamil: string;
-    wordByWord: Array<{
+    wordByWord?: Array<{
       hindi: string;
       english: string;
       tamil: string;
@@ -24,14 +24,41 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setText(e.target?.result as string);
-      };
-      reader.readAsText(file);
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      if (file.type.startsWith('image/')) {
+        // Handle image file
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch('/api/ocr', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) throw new Error('OCR failed');
+        const data = await response.json();
+        setText(data.text);
+      } else {
+        // Handle text file
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setText(e.target?.result as string);
+        };
+        reader.readAsText(file);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to process the file. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,14 +101,15 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
             variant="outline"
             className="w-full"
             onClick={() => document.getElementById("file-upload")?.click()}
+            disabled={isLoading}
           >
             <Upload className="h-4 w-4 mr-2" />
-            Upload Text File
+            Upload Text or Image File
           </Button>
           <input
             id="file-upload"
             type="file"
-            accept=".txt"
+            accept=".txt,image/*"
             className="hidden"
             onChange={handleFileUpload}
           />
@@ -97,7 +125,7 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
           onClick={handleTranslate}
           disabled={isLoading || !text.trim()}
         >
-          {isLoading ? "Translating..." : "Translate"}
+          {isLoading ? "Processing..." : "Translate"}
         </Button>
       </CardContent>
     </Card>
