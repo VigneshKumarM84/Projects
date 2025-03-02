@@ -73,14 +73,22 @@ function AnswerInput({ originalText, targetLanguage, onScoreResult }: { original
 }
 
 function ScoreDisplay({ scoreResult, systemTranslation, targetLanguage }: { scoreResult: ScoreResult; systemTranslation: string; targetLanguage: "english" | "tamil" }) {
+  // Get color based on score
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
     if (score >= 60) return "text-yellow-600";
     return "text-red-600";
   };
 
+  // Check if the translation appears to be unsuccessful
+  const isInvalidTranslation = (translation: string) => {
+    return translation.includes("Translation to") || 
+           translation.includes("unavailable") ||
+           translation.includes("[Hindi");
+  };
+
   return (
-    <div className="mt-4 p-4 bg-muted rounded-md space-y-3">
+    <div className="space-y-3">
       <div className="flex items-center">
         <span className="font-bold mr-2">Score:</span>
         <span className={`font-bold text-xl ${getScoreColor(scoreResult.score)}`}>
@@ -90,17 +98,22 @@ function ScoreDisplay({ scoreResult, systemTranslation, targetLanguage }: { scor
 
       <div>
         <p className="font-medium mb-1">Your Translation:</p>
-        <p className="p-2 bg-background rounded">{scoreResult.userAnswer}</p>
+        <p className="p-2 bg-gray-100 rounded">{scoreResult.userAnswer}</p>
       </div>
 
       <div>
         <p className="font-medium mb-1">System Translation:</p>
-        <p className="p-2 bg-background rounded">{systemTranslation}</p>
+        <p className="p-2 bg-gray-100 rounded">
+          {isInvalidTranslation(systemTranslation) ? 
+            <span className="text-amber-600">Translation API may be unavailable - please try again later</span> : 
+            systemTranslation
+          }
+        </p>
       </div>
 
       <div>
         <p className="font-medium mb-1">Feedback:</p>
-        <p className="p-2 bg-background rounded">{scoreResult.feedback}</p>
+        <p className="p-2 bg-gray-100 rounded">{scoreResult.feedback}</p>
       </div>
     </div>
   );

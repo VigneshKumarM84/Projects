@@ -47,40 +47,31 @@ function generateFeedback(score: number, targetLanguage: string): string {
 
 async function translateText(text: string, fromLang: string, toLang: string) {
   try {
-    // Using LibreTranslate API
-    const url = "https://libretranslate.com/translate";
+    // Try Google Translate API alternative
+    const url = "https://translate.googleapis.com/translate_a/single";
 
-    // Mapping language codes to match LibreTranslate format
-    const langMap: Record<string, string> = {
-      'hi': 'hi',
-      'en': 'en',
-      'ta': 'ta'
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        q: text,
-        source: langMap[fromLang],
-        target: langMap[toLang],
-        format: "text"
-      }),
-      headers: { "Content-Type": "application/json" }
+    const params = new URLSearchParams({
+      client: 'gtx',
+      sl: fromLang,
+      tl: toLang,
+      dt: 't',
+      q: text
     });
 
+    const response = await fetch(`${url}?${params}`);
     const data = await response.json();
 
-    if (data.translatedText) {
-      return data.translatedText;
+    if (data && data[0] && data[0][0]) {
+      return data[0][0][0];
     } else {
-      throw new Error(data.error || 'Translation failed');
+      throw new Error('Translation failed');
     }
   } catch (error) {
     console.error('Translation error:', error);
 
     // Enhanced fallback translations for when API fails
     if (fromLang === 'hi' && toLang === 'en') {
-      // Simple Hindi to English dictionary for common words
+      // Extended Hindi to English dictionary
       const hiToEn: Record<string, string> = {
         'नमस्ते': 'hello',
         'धन्यवाद': 'thank you',
@@ -101,25 +92,42 @@ async function translateText(text: string, fromLang: string, toLang: string) {
         'सभी': 'all',
         'था': 'was',
         'जब': 'when',
-        'ऐसा': 'such'
+        'ऐसा': 'such',
+        'अच्छा': 'good',
+        'खराब': 'bad',
+        'बड़ा': 'big',
+        'छोटा': 'small',
+        'आज': 'today',
+        'कल': 'tomorrow',
+        'कैसे': 'how',
+        'क्यों': 'why',
+        'क्या': 'what',
+        'कौन': 'who',
+        'कहाँ': 'where',
+        'कब': 'when',
+        'पानी': 'water',
+        'खाना': 'food',
+        'दिन': 'day',
+        'रात': 'night',
+        'सुबह': 'morning',
+        'शाम': 'evening'
       };
 
-      // Try to translate word by word if possible
+      // Try to translate word by word
       const words = text.split(/\s+/);
       const translatedWords = words.map(word => {
         // Remove punctuation for lookup
         const cleanWord = word.replace(/[^\u0900-\u097F]/g, '');
-        return hiToEn[cleanWord] || word;
+        return hiToEn[cleanWord] || "[Hindi word]"; // Replace untranslated words with placeholder
       });
 
       return translatedWords.join(' ');
     } else if (fromLang === 'hi' && toLang === 'ta') {
-      // Simple Hindi to Tamil fallback (just indicating it's Tamil)
-      return `Tamil translation of: ${text}`;
+      return "Tamil translation unavailable"; // More honest fallback
     }
 
     // If no specific fallback is defined
-    return `${toLang.toUpperCase()} translation of: ${text}`;
+    return `Translation to ${toLang.toUpperCase()} unavailable`;
   }
 }
 
