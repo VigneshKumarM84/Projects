@@ -70,9 +70,9 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
     setIsLoading(true);
 
     try {
-      const data = await apiRequest<{ hindi: string; english: string; tamil: string; wordByWord: Array<{ hindi: string; english: string; tamil: string }> }>("/api/translate", {
+      const data = await apiRequest<{ hindi: string; english: string; tamil: string; wordByWord: Array<{ hindi: string; english: string; tamil: string }> }>("/api/translate/text", {
         method: "POST",
-        body: { hindi: text },
+        body: { text: text },
       });
 
       onTranslationComplete(data);
