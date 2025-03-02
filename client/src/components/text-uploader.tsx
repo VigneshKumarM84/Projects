@@ -140,7 +140,10 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => document.getElementById("file-upload")?.click()}
+            onClick={() => {
+              const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+              if (fileInput) fileInput.click();
+            }}
             disabled={isLoading}
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -152,6 +155,7 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
             accept=".txt,image/*"
             className="hidden"
             onChange={handleFileUpload}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
         <Textarea
