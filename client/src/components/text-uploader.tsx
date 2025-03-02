@@ -19,6 +19,8 @@ interface TextUploaderProps {
   }) => void;
 }
 
+import * as React from "react";
+
 export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
