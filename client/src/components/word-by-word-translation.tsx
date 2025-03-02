@@ -91,7 +91,6 @@ export function WordByWordTranslation({ translations }: WordByWordTranslationPro
               <TableRow>
                 <TableHead>Hindi</TableHead>
                 <TableHead>English</TableHead>
-                <TableHead>Tamil</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,7 +98,6 @@ export function WordByWordTranslation({ translations }: WordByWordTranslationPro
                 <TableRow key={index} className={keyWordIndices.has(index) ? "bg-amber-50" : ""}>
                   <TableCell>{translation.hindi}</TableCell>
                   <TableCell>{translation.english}</TableCell>
-                  <TableCell>{translation.tamil}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

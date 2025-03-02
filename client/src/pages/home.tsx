@@ -129,8 +129,6 @@ export default function Home() {
   });
 
   const [englishScoreResult, setEnglishScoreResult] = useState<ScoreResult | null>(null);
-  const [tamilScoreResult, setTamilScoreResult] = useState<ScoreResult | null>(null);
-  const [activeLanguage, setActiveLanguage] = useState<"english" | "tamil">("english");
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -179,44 +177,19 @@ export default function Home() {
                   <CardTitle>Practice Your Translation Skills</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="english">
-                    <TabsList className="w-full">
-                      <TabsTrigger value="english" className="flex-1">English</TabsTrigger>
-                      <TabsTrigger value="tamil" className="flex-1">Tamil</TabsTrigger>
-                    </TabsList>
+                  <AnswerInput 
+                    originalText={translations.hindi} 
+                    targetLanguage="english"
+                    onScoreResult={setEnglishScoreResult}
+                  />
 
-                    <TabsContent value="english">
-                      <AnswerInput 
-                        originalText={translations.hindi} 
-                        targetLanguage="english"
-                        onScoreResult={setEnglishScoreResult}
-                      />
-
-                      {englishScoreResult && (
-                        <ScoreDisplay 
-                          scoreResult={englishScoreResult}
-                          systemTranslation={translations.english}
-                          targetLanguage="english"
-                        />
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="tamil">
-                      <AnswerInput 
-                        originalText={translations.hindi} 
-                        targetLanguage="tamil"
-                        onScoreResult={setTamilScoreResult}
-                      />
-
-                      {tamilScoreResult && (
-                        <ScoreDisplay 
-                          scoreResult={tamilScoreResult}
-                          systemTranslation={translations.tamil}
-                          targetLanguage="tamil"
-                        />
-                      )}
-                    </TabsContent>
-                  </Tabs>
+                  {englishScoreResult && (
+                    <ScoreDisplay 
+                      scoreResult={englishScoreResult}
+                      systemTranslation={translations.english}
+                      targetLanguage="english"
+                    />
+                  )}
                 </CardContent>
               </Card>
             </>

@@ -70,10 +70,9 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
   );
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       <TranslationCard language="Hindi" text={translations.hindi} />
       <TranslationCard language="English" text={translations.english} />
-      <TranslationCard language="Tamil" text={translations.tamil} />
     </div>
   );
 }
