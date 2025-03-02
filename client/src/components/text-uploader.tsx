@@ -140,28 +140,23 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4">
-          <label htmlFor="file-upload" className="w-full">
-            <Button
-              variant="outline"
-              className="w-full"
-              type="button"
-              disabled={isLoading}
-              asChild
+          <div className="w-full">
+            <label 
+              className="flex items-center justify-center h-10 px-4 py-2 gap-2 w-full rounded-md border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              htmlFor="file-upload"
             >
-              <div className="flex items-center justify-center w-full">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Text or Image File
-              </div>
-            </Button>
-          </label>
-          <input
-            ref={fileInputRef}
-            id="file-upload"
-            type="file"
-            accept=".txt,image/*"
-            className="sr-only"
-            onChange={handleFileUpload}
-          />
+              <Upload className="h-4 w-4" />
+              Upload Text or Image File
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              accept=".txt,image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={isLoading}
+            />
+          </div>
         </div>
         <Textarea
           placeholder="Or type/paste Hindi text here..."
