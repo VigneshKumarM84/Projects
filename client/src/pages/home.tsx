@@ -3,8 +3,9 @@ import { VoiceRecorder } from "@/components/voice-recorder";
 import { TextUploader } from "@/components/text-uploader";
 import { TranslationDisplay } from "@/components/translation-display";
 import { WordByWordTranslation } from "@/components/word-by-word-translation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, Separator } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 interface Translation {
   hindi: string;
@@ -17,6 +18,51 @@ interface Translation {
   }>;
 }
 
+interface ScoreResult {
+  userAnswer: string;
+  score: number;
+  feedback: string;
+}
+
+function AnswerInput({ originalText, targetLanguage, onScoreResult }: { originalText: string; targetLanguage: "english" | "tamil"; onScoreResult: (result: ScoreResult | null) => void }) {
+  const [userAnswer, setUserAnswer] = useState("");
+
+  const handleSubmit = async () => {
+    // Placeholder for API call to score the answer
+    const score = await fetch(`/api/score?original=${encodeURIComponent(originalText)}&translation=${encodeURIComponent(userAnswer)}&language=${targetLanguage}`, {
+      method: "POST",
+    }).then(res => res.json());
+
+    onScoreResult({ userAnswer, score: score.score, feedback: score.feedback });
+  };
+
+  return (
+    <>
+      <label htmlFor="user-answer" className="block text-sm font-medium mb-2">Your {targetLanguage} Translation:</label>
+      <textarea
+        id="user-answer"
+        value={userAnswer}
+        onChange={(e) => setUserAnswer(e.target.value)}
+        className="w-full border border-gray-300 rounded-md p-2"
+        rows={5}
+      />
+      <button onClick={handleSubmit} className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button>
+    </>
+  );
+}
+
+function ScoreDisplay({ scoreResult, systemTranslation, targetLanguage }: { scoreResult: ScoreResult; systemTranslation: string; targetLanguage: "english" | "tamil" }) {
+  return (
+    <>
+      <p className="font-bold">Score: {scoreResult.score}</p>
+      <p>Your Answer: {scoreResult.userAnswer}</p>
+      <p>System Translation: {systemTranslation}</p>
+      <p>Feedback: {scoreResult.feedback}</p>
+    </>
+  );
+}
+
+
 export default function Home() {
   const [translations, setTranslations] = useState<Translation>({
     hindi: "",
@@ -24,6 +70,10 @@ export default function Home() {
     tamil: "",
     wordByWord: [],
   });
+
+  const [englishScoreResult, setEnglishScoreResult] = useState<ScoreResult | null>(null);
+  const [tamilScoreResult, setTamilScoreResult] = useState<ScoreResult | null>(null);
+  const [activeLanguage, setActiveLanguage] = useState<"english" | "tamil">("english");
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -57,11 +107,65 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        <TranslationDisplay translations={translations} />
+        <div className="space-y-4">
+          <TranslationDisplay translations={translations} />
 
-        {translations.wordByWord && translations.wordByWord.length > 0 && (
-          <WordByWordTranslation translations={translations.wordByWord} />
-        )}
+          {translations.wordByWord && translations.wordByWord.length > 0 && (
+            <WordByWordTranslation translations={translations.wordByWord} />
+          )}
+
+          {translations.hindi && (
+            <>
+              <Separator className="my-4" />
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Practice Your Translation Skills</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="english" onValueChange={(value) => setActiveLanguage(value as "english" | "tamil")}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="english" className="flex-1">English</TabsTrigger>
+                      <TabsTrigger value="tamil" className="flex-1">Tamil</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="english">
+                      <AnswerInput 
+                        originalText={translations.hindi} 
+                        targetLanguage="english"
+                        onScoreResult={setEnglishScoreResult}
+                      />
+
+                      {englishScoreResult && (
+                        <ScoreDisplay 
+                          scoreResult={englishScoreResult}
+                          systemTranslation={translations.english}
+                          targetLanguage="english"
+                        />
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="tamil">
+                      <AnswerInput 
+                        originalText={translations.hindi} 
+                        targetLanguage="tamil"
+                        onScoreResult={setTamilScoreResult}
+                      />
+
+                      {tamilScoreResult && (
+                        <ScoreDisplay 
+                          scoreResult={tamilScoreResult}
+                          systemTranslation={translations.tamil}
+                          targetLanguage="tamil"
+                        />
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

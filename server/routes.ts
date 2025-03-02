@@ -93,7 +93,77 @@ async function performOCR(imageBuffer: Buffer): Promise<string> {
   }
 }
 
+// Function to calculate similarity between two strings
+function calculateSimilarity(str1: string, str2: string): number {
+  // Convert both strings to lowercase for case-insensitive comparison
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+  
+  // Simple word matching algorithm
+  const words1 = s1.split(/\s+/);
+  const words2 = s2.split(/\s+/);
+  
+  // Count matching words
+  let matchCount = 0;
+  for (const word1 of words1) {
+    if (words2.includes(word1)) matchCount++;
+  }
+  
+  // Calculate score based on percentage of matching words
+  const maxWords = Math.max(words1.length, words2.length);
+  return maxWords > 0 ? (matchCount / maxWords) * 100 : 0;
+}
+
+// Generate feedback based on similarity score
+function generateFeedback(score: number, targetLanguage: string): string {
+  if (score >= 90) {
+    return `Excellent! Your ${targetLanguage} translation is very accurate.`;
+  } else if (score >= 75) {
+    return `Good job! Your ${targetLanguage} translation is mostly correct with minor differences.`;
+  } else if (score >= 50) {
+    return `Fair attempt. Your ${targetLanguage} translation has some correct elements but could be improved.`;
+  } else {
+    return `Keep practicing. Your ${targetLanguage} translation needs improvement. Try reviewing vocabulary and sentence structure.`;
+  }
+}
+
 export async function registerRoutes(app: Express) {
+  app.post("/api/score-translation", async (req, res) => {
+    try {
+      const { originalText, userAnswer, targetLanguage } = req.body;
+      
+      if (!originalText || !userAnswer || !targetLanguage) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Get the system translation
+      let systemTranslation = "";
+      if (targetLanguage === "english") {
+        systemTranslation = await translateText(originalText, "hi", "en");
+      } else if (targetLanguage === "tamil") {
+        systemTranslation = await translateText(originalText, "hi", "ta");
+      } else {
+        return res.status(400).json({ message: "Invalid target language" });
+      }
+      
+      // Calculate similarity score
+      const similarityScore = calculateSimilarity(userAnswer, systemTranslation);
+      const roundedScore = Math.round(similarityScore);
+      
+      // Generate feedback
+      const feedback = generateFeedback(roundedScore, targetLanguage);
+      
+      res.json({
+        score: roundedScore,
+        systemTranslation,
+        feedback
+      });
+    } catch (error) {
+      console.error('Scoring error:', error);
+      res.status(500).json({ message: "Failed to score translation" });
+    }
+  });
+
   app.post("/api/translate", async (req, res) => {
     try {
       const { text } = req.body;
