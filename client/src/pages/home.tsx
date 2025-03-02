@@ -138,7 +138,7 @@ export default function Home() {
           <p className="text-muted-foreground">
             Translate Hindi to English using voice or text
           </p>
-          
+
           <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200">
             <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
             <ol className="list-decimal list-inside space-y-2 text-sm">
@@ -200,6 +200,55 @@ export default function Home() {
                       targetLanguage="english"
                     />
                   )}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">Select Exercise (Hindi):</h3>
+                    <div className="grid gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="justify-start text-left w-full" 
+                        onClick={() => setTranslations({
+                          ...translations,
+                          hindi: "मैं आज बहुत खुश हूँ।",
+                          english: "I am very happy today."
+                        })}
+                      >
+                        <span className="truncate">Exercise 1: मैं आज बहुत खुश हूँ।</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="justify-start text-left w-full" 
+                        onClick={() => setTranslations({
+                          ...translations,
+                          hindi: "मेरा नाम रोहन है और मैं भारत से हूँ।",
+                          english: "My name is Rohan and I am from India."
+                        })}
+                      >
+                        <span className="truncate">Exercise 2: मेरा नाम रोहन है और मैं भारत से हूँ।</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="justify-start text-left w-full" 
+                        onClick={() => setTranslations({
+                          ...translations,
+                          hindi: "क्या आप हिंदी बोल सकते हैं?",
+                          english: "Can you speak Hindi?"
+                        })}
+                      >
+                        <span className="truncate">Exercise 3: क्या आप हिंदी बोल सकते हैं?</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="justify-start text-left w-full" 
+                        onClick={() => setTranslations({
+                          ...translations,
+                          hindi: "भारत में बहुत सारे त्योहार मनाए जाते हैं।",
+                          english: "Many festivals are celebrated in India."
+                        })}
+                      >
+                        <span className="truncate">Exercise 4: भारत में बहुत सारे त्योहार मनाए जाते हैं।</span>
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </>
