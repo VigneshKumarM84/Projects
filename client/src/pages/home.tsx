@@ -3,7 +3,8 @@ import { VoiceRecorder } from "@/components/voice-recorder";
 import { TextUploader } from "@/components/text-uploader";
 import { TranslationDisplay } from "@/components/translation-display";
 import { WordByWordTranslation } from "@/components/word-by-word-translation";
-import { Card, CardContent, CardHeader, CardTitle, Separator } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
