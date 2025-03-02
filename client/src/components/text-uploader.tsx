@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,12 +19,10 @@ interface TextUploaderProps {
   }) => void;
 }
 
-import * as React from "react";
-
 export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
 const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,23 +138,23 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4">
-          <div className="w-full">
-            <label 
-              className="flex items-center justify-center h-10 px-4 py-2 gap-2 w-full rounded-md border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer"
-              htmlFor="file-upload"
-            >
-              <Upload className="h-4 w-4" />
-              Upload Text or Image File
-            </label>
+          <Button
+            variant="outline"
+            className="w-full relative"
+            disabled={isLoading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Text or Image File
             <input
-              id="file-upload"
+              ref={fileInputRef}
               type="file"
               accept=".txt,image/*"
-              className="hidden"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               onChange={handleFileUpload}
               disabled={isLoading}
             />
-          </div>
+          </Button>
         </div>
         <Textarea
           placeholder="Or type/paste Hindi text here..."
