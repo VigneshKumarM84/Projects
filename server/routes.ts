@@ -163,18 +163,23 @@ async function translateText(text: string, fromLang: string, toLang: string) {
 async function translateWords(text: string) {
   // Split text into words, preserving punctuation
   const words = text.match(/[\u0900-\u097F]+|\S+/g) || [];
-
+  
+  // Filter out very short words for better performance
+  // but process all words to maintain sequence
   const translations = await Promise.all(
     words.map(async (word) => {
+      // For very short words or punctuation, use simpler translation
+      const needsFullTranslation = word.length > 1 && !/^[.,!?;:।॥]$/.test(word);
+      
       const [english, tamil] = await Promise.all([
-        translateText(word, 'hi', 'en'),
-        translateText(word, 'hi', 'ta')
+        needsFullTranslation ? translateText(word, 'hi', 'en') : word,
+        needsFullTranslation ? translateText(word, 'hi', 'ta') : word
       ]);
 
       return {
         hindi: word,
-        english,
-        tamil
+        english: english || word,
+        tamil: tamil || word
       };
     })
   );
