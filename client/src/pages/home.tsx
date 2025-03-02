@@ -133,11 +133,21 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold tracking-tight">Voice & Text Translation</h1>
           <p className="text-muted-foreground">
-            Translate Hindi to English and Tamil using voice or text
+            Translate Hindi to English using voice or text
           </p>
+          
+          <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200">
+            <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
+            <ol className="list-decimal list-inside space-y-2 text-sm">
+              <li><span className="font-medium">Voice Input:</span> Click the microphone button and speak Hindi to translate.</li>
+              <li><span className="font-medium">Text Input:</span> Type or paste Hindi text and click "Translate".</li>
+              <li><span className="font-medium">Practice Exercises:</span> Select a pre-made exercise from the list below to practice translation.</li>
+              <li><span className="font-medium">Translation Practice:</span> Enter your translation in the text area and click "Check My Translation" to get feedback.</li>
+            </ol>
+          </div>
         </div>
 
         <Tabs defaultValue="voice">
