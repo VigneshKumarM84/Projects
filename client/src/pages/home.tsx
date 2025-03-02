@@ -52,14 +52,45 @@ function AnswerInput({ originalText, targetLanguage, onScoreResult }: { original
   );
 }
 
+// Define the ScoreResult type
+interface ScoreResult {
+  userAnswer: string;
+  score: number;
+  feedback: string;
+}
+
 function ScoreDisplay({ scoreResult, systemTranslation, targetLanguage }: { scoreResult: ScoreResult; systemTranslation: string; targetLanguage: "english" | "tamil" }) {
+  // Get color based on score
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+  
   return (
-    <>
-      <p className="font-bold">Score: {scoreResult.score}</p>
-      <p>Your Answer: {scoreResult.userAnswer}</p>
-      <p>System Translation: {systemTranslation}</p>
-      <p>Feedback: {scoreResult.feedback}</p>
-    </>
+    <div className="space-y-3">
+      <div className="flex items-center">
+        <span className="font-bold mr-2">Score:</span>
+        <span className={`font-bold text-xl ${getScoreColor(scoreResult.score)}`}>
+          {scoreResult.score}/100
+        </span>
+      </div>
+      
+      <div>
+        <p className="font-medium mb-1">Your Translation:</p>
+        <p className="p-2 bg-gray-100 rounded">{scoreResult.userAnswer}</p>
+      </div>
+      
+      <div>
+        <p className="font-medium mb-1">System Translation:</p>
+        <p className="p-2 bg-gray-100 rounded">{systemTranslation}</p>
+      </div>
+      
+      <div>
+        <p className="font-medium mb-1">Feedback:</p>
+        <p className="p-2 bg-gray-100 rounded">{scoreResult.feedback}</p>
+      </div>
+    </div>
   );
 }
 
@@ -129,6 +160,120 @@ export default function Home() {
                       <TabsTrigger value="english" className="flex-1">English</TabsTrigger>
                       <TabsTrigger value="tamil" className="flex-1">Tamil</TabsTrigger>
                     </TabsList>
+                    
+                    <TabsContent value="english">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <p className="font-medium">Translate the text to English:</p>
+                          <textarea 
+                            className="w-full min-h-[120px] p-3 border rounded-md"
+                            placeholder="Enter your English translation..."
+                            onChange={(e) => {
+                              // Store the translation locally
+                              localStorage.setItem('userEnglishTranslation', e.target.value);
+                            }}
+                            defaultValue={localStorage.getItem('userEnglishTranslation') || ''}
+                          />
+                          <button 
+                            className="px-4 py-2 bg-primary text-white rounded-md"
+                            onClick={async () => {
+                              const userAnswer = localStorage.getItem('userEnglishTranslation') || '';
+                              
+                              try {
+                                const result = await fetch('/api/score-translation', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    originalText: translations.hindi,
+                                    userAnswer,
+                                    targetLanguage: "english"
+                                  }),
+                                }).then(res => res.json());
+                                
+                                setEnglishScoreResult({
+                                  userAnswer,
+                                  score: result.score,
+                                  feedback: result.feedback
+                                });
+                              } catch (error) {
+                                console.error('Scoring error:', error);
+                              }
+                            }}
+                          >
+                            Check My Translation
+                          </button>
+                        </div>
+                        
+                        {englishScoreResult && (
+                          <div className="p-4 bg-muted rounded-md">
+                            <ScoreDisplay 
+                              scoreResult={englishScoreResult} 
+                              systemTranslation={translations.english} 
+                              targetLanguage="english" 
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="tamil">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <p className="font-medium">Translate the text to Tamil:</p>
+                          <textarea 
+                            className="w-full min-h-[120px] p-3 border rounded-md"
+                            placeholder="Enter your Tamil translation..."
+                            onChange={(e) => {
+                              // Store the translation locally
+                              localStorage.setItem('userTamilTranslation', e.target.value);
+                            }}
+                            defaultValue={localStorage.getItem('userTamilTranslation') || ''}
+                          />
+                          <button 
+                            className="px-4 py-2 bg-primary text-white rounded-md"
+                            onClick={async () => {
+                              const userAnswer = localStorage.getItem('userTamilTranslation') || '';
+                              
+                              try {
+                                const result = await fetch('/api/score-translation', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    originalText: translations.hindi,
+                                    userAnswer,
+                                    targetLanguage: "tamil"
+                                  }),
+                                }).then(res => res.json());
+                                
+                                setTamilScoreResult({
+                                  userAnswer,
+                                  score: result.score,
+                                  feedback: result.feedback
+                                });
+                              } catch (error) {
+                                console.error('Scoring error:', error);
+                              }
+                            }}
+                          >
+                            Check My Translation
+                          </button>
+                        </div>
+                        
+                        {tamilScoreResult && (
+                          <div className="p-4 bg-muted rounded-md">
+                            <ScoreDisplay 
+                              scoreResult={tamilScoreResult} 
+                              systemTranslation={translations.tamil} 
+                              targetLanguage="tamil" 
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
 
                     <TabsContent value="english">
                       <AnswerInput 
