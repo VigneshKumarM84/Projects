@@ -11,37 +11,66 @@ const upload = multer({
   }
 });
 
-// Function to calculate similarity between two strings
+// Function to calculate similarity between two strings with improved algorithm
 function calculateSimilarity(str1: string, str2: string): number {
   // Convert both strings to lowercase for case-insensitive comparison
   const s1 = str1.toLowerCase();
   const s2 = str2.toLowerCase();
 
-  // Simple word matching algorithm
-  const words1 = s1.split(/\s+/);
-  const words2 = s2.split(/\s+/);
-
-  // Count matching words
+  // Split into words
+  const words1 = s1.split(/\s+/).filter(word => word.length > 1);
+  const words2 = s2.split(/\s+/).filter(word => word.length > 1);
+  
+  // Base score calculation
   let matchCount = 0;
+  let partialMatchCount = 0;
+  
+  // Check for exact and partial matches
   for (const word1 of words1) {
-    if (words2.includes(word1)) matchCount++;
+    // Exact match
+    if (words2.includes(word1)) {
+      matchCount += 1;
+      continue;
+    }
+    
+    // Check for partial matches (at least 50% of characters match)
+    for (const word2 of words2) {
+      if (word1.length < 3 || word2.length < 3) continue;
+      
+      // Check if word2 contains at least half of word1's characters
+      const commonChars = [...word1].filter(char => word2.includes(char));
+      if (commonChars.length >= word1.length * 0.5) {
+        partialMatchCount += 0.5;
+        break;
+      }
+    }
   }
-
-  // Calculate score based on percentage of matching words
+  
+  // Calculate similarity score
+  const totalMatches = matchCount + partialMatchCount;
   const maxWords = Math.max(words1.length, words2.length);
-  return maxWords > 0 ? (matchCount / maxWords) * 100 : 0;
+  
+  // Apply a more generous baseline score (min 40% if there's any effort)
+  let score = maxWords > 0 ? (totalMatches / maxWords) * 100 : 0;
+  
+  // Boost score if there are any matches (to be more encouraging)
+  if (totalMatches > 0 && score < 40) {
+    score = 40 + (score / 2); // Boost low scores
+  }
+  
+  return Math.min(100, score); // Cap at 100
 }
 
-// Generate feedback based on similarity score
+// Generate more encouraging feedback based on similarity score
 function generateFeedback(score: number, targetLanguage: string): string {
-  if (score >= 90) {
+  if (score >= 85) {
     return `Excellent! Your ${targetLanguage} translation is very accurate.`;
-  } else if (score >= 75) {
+  } else if (score >= 65) {
     return `Good job! Your ${targetLanguage} translation is mostly correct with minor differences.`;
-  } else if (score >= 50) {
-    return `Fair attempt. Your ${targetLanguage} translation has some correct elements but could be improved.`;
+  } else if (score >= 40) {
+    return `Good attempt. You got some key words right. Keep practicing to improve your ${targetLanguage} vocabulary and phrasing.`;
   } else {
-    return `Keep practicing. Your ${targetLanguage} translation needs improvement. Try reviewing vocabulary and sentence structure.`;
+    return `Thanks for your attempt. Translation is challenging! Keep practicing your ${targetLanguage} skills, focusing on common vocabulary and sentence structure.`;
   }
 }
 

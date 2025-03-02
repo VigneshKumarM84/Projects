@@ -73,11 +73,11 @@ function AnswerInput({ originalText, targetLanguage, onScoreResult }: { original
 }
 
 function ScoreDisplay({ scoreResult, systemTranslation, targetLanguage }: { scoreResult: ScoreResult; systemTranslation: string; targetLanguage: "english" | "tamil" }) {
-  // Get color based on score
+  // Get color based on score with more generous thresholds
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600";
-    if (score >= 60) return "text-yellow-600";
-    return "text-red-600";
+    if (score >= 70) return "text-green-600";
+    if (score >= 45) return "text-yellow-600";
+    return "text-amber-600"; // Less harsh than red
   };
 
   // Check if the translation appears to be unsuccessful
