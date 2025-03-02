@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef, ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,106 +25,66 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsLoading(true);
-    try {
-      if (file.type.startsWith('image/')) {
-        // Handle image file
-        const formData = new FormData();
-        formData.append('image', file);
-
-        toast({
-          title: "Processing Image",
-          description: "Extracting text from your image...",
-        });
-
-        const response = await fetch('/api/ocr', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'OCR failed');
-        }
-
-        if (!data.text?.trim()) {
-          throw new Error('No Hindi text could be detected in the image. Please ensure the image is clear and contains Hindi text.');
-        }
-
-        setText(data.text);
-        toast({
-          title: "Success",
-          description: "Text extracted from image successfully! You can now translate it.",
-        });
-      } else {
-        // Handle text file
-        toast({
-          title: "Processing File",
-          description: "Reading text file...",
-        });
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const content = e.target?.result as string;
-          if (content.trim()) {
-            setText(content);
-            toast({
-              title: "Success",
-              description: "Text file loaded successfully! You can now translate it.",
-            });
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "The file appears to be empty. Please upload a file containing Hindi text.",
-            });
-          }
-        };
-        reader.readAsText(file);
-      }
-    } catch (error) {
+    if (file.type.startsWith("image/")) {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process the file. Please try a different image or ensure it contains clear Hindi text.",
+        title: "Image upload not supported yet",
+        description: "Please use a text file or paste text directly.",
       });
-      setText("");
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+
+    if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+      try {
+        const text = await file.text();
+        setText(text);
+      } catch (error) {
+        toast({
+          title: "Error reading file",
+          description: "Could not read the file content.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Unsupported file type",
+        description: "Please upload a .txt file.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleTranslate = async () => {
     if (!text.trim()) {
       toast({
+        title: "No text to translate",
+        description: "Please enter some text to translate.",
         variant: "destructive",
-        title: "Error",
-        description: "Please enter or upload some Hindi text",
       });
       return;
     }
 
     setIsLoading(true);
+
     try {
-      const response = await apiRequest("POST", "/api/translate/text", {
-        text: text.trim(),
+      const data = await apiRequest<{ hindi: string; english: string; tamil: string; wordByWord: Array<{ hindi: string; english: string; tamil: string }> }>("/api/translate", {
+        method: "POST",
+        body: { hindi: text },
       });
-      const translations = await response.json();
-      onTranslationComplete(translations);
+
+      onTranslationComplete(data);
       toast({
-        title: "Success",
-        description: "Text translated successfully",
+        title: "Translation complete",
+        description: "Your text has been translated successfully.",
       });
     } catch (error) {
       toast({
+        title: "Translation failed",
+        description: "An error occurred during translation.",
         variant: "destructive",
-        title: "Translation Error",
-        description: "Failed to translate the text. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -132,42 +92,37 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   return (
-    <Card>
+    <Card className="mb-8">
       <CardHeader>
-        <CardTitle>Upload or Type Hindi Text</CardTitle>
+        <CardTitle className="text-xl">Hindi Text Input</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            className="w-full relative"
-            disabled={isLoading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Text or Image File
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".txt,image/*"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              onChange={handleFileUpload}
-              disabled={isLoading}
-            />
-          </Button>
+        <div className="w-full">
+          <input
+            type="file"
+            id="file-upload"
+            accept=".txt,image/*"
+            onChange={handleFileUpload}
+            className="block w-full text-sm text-slate-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-semibold
+              file:bg-slate-50 file:text-slate-700
+              hover:file:bg-slate-100"
+          />
         </div>
         <Textarea
           placeholder="Or type/paste Hindi text here..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="min-h-[100px]"
+          className="min-h-[200px]"
         />
         <Button
           className="w-full"
           onClick={handleTranslate}
-          disabled={isLoading || !text.trim()}
+          disabled={isLoading}
         >
-          {isLoading ? "Processing..." : "Translate"}
+          {isLoading ? "Translating..." : "Translate"}
         </Button>
       </CardContent>
     </Card>
