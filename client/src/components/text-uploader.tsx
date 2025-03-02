@@ -22,6 +22,7 @@ interface TextUploaderProps {
 export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
 const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,25 +138,27 @@ const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              const fileInput = document.getElementById("file-upload") as HTMLInputElement;
-              if (fileInput) fileInput.click();
-            }}
-            disabled={isLoading}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Text or Image File
-          </Button>
+          <label htmlFor="file-upload" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              type="button"
+              disabled={isLoading}
+              asChild
+            >
+              <div className="flex items-center justify-center w-full">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Text or Image File
+              </div>
+            </Button>
+          </label>
           <input
+            ref={fileInputRef}
             id="file-upload"
             type="file"
             accept=".txt,image/*"
-            className="hidden"
+            className="sr-only"
             onChange={handleFileUpload}
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
         <Textarea
