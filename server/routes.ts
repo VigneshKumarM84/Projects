@@ -11,18 +11,52 @@ const upload = multer({
   }
 });
 
+// Function to calculate similarity between two strings
+function calculateSimilarity(str1: string, str2: string): number {
+  // Convert both strings to lowercase for case-insensitive comparison
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+
+  // Simple word matching algorithm
+  const words1 = s1.split(/\s+/);
+  const words2 = s2.split(/\s+/);
+
+  // Count matching words
+  let matchCount = 0;
+  for (const word1 of words1) {
+    if (words2.includes(word1)) matchCount++;
+  }
+
+  // Calculate score based on percentage of matching words
+  const maxWords = Math.max(words1.length, words2.length);
+  return maxWords > 0 ? (matchCount / maxWords) * 100 : 0;
+}
+
+// Generate feedback based on similarity score
+function generateFeedback(score: number, targetLanguage: string): string {
+  if (score >= 90) {
+    return `Excellent! Your ${targetLanguage} translation is very accurate.`;
+  } else if (score >= 75) {
+    return `Good job! Your ${targetLanguage} translation is mostly correct with minor differences.`;
+  } else if (score >= 50) {
+    return `Fair attempt. Your ${targetLanguage} translation has some correct elements but could be improved.`;
+  } else {
+    return `Keep practicing. Your ${targetLanguage} translation needs improvement. Try reviewing vocabulary and sentence structure.`;
+  }
+}
+
 async function translateText(text: string, fromLang: string, toLang: string) {
   try {
     // Using LibreTranslate API
     const url = "https://libretranslate.com/translate";
-    
+
     // Mapping language codes to match LibreTranslate format
     const langMap: Record<string, string> = {
       'hi': 'hi',
       'en': 'en',
       'ta': 'ta'
     };
-    
+
     const response = await fetch(url, {
       method: "POST",
       body: JSON.stringify({
@@ -33,9 +67,9 @@ async function translateText(text: string, fromLang: string, toLang: string) {
       }),
       headers: { "Content-Type": "application/json" }
     });
-    
+
     const data = await response.json();
-    
+
     if (data.translatedText) {
       return data.translatedText;
     } else {
@@ -43,7 +77,7 @@ async function translateText(text: string, fromLang: string, toLang: string) {
     }
   } catch (error) {
     console.error('Translation error:', error);
-    
+
     // Enhanced fallback translations for when API fails
     if (fromLang === 'hi' && toLang === 'en') {
       // Simple Hindi to English dictionary for common words
@@ -69,7 +103,7 @@ async function translateText(text: string, fromLang: string, toLang: string) {
         'जब': 'when',
         'ऐसा': 'such'
       };
-      
+
       // Try to translate word by word if possible
       const words = text.split(/\s+/);
       const translatedWords = words.map(word => {
@@ -77,13 +111,13 @@ async function translateText(text: string, fromLang: string, toLang: string) {
         const cleanWord = word.replace(/[^\u0900-\u097F]/g, '');
         return hiToEn[cleanWord] || word;
       });
-      
+
       return translatedWords.join(' ');
     } else if (fromLang === 'hi' && toLang === 'ta') {
       // Simple Hindi to Tamil fallback (just indicating it's Tamil)
       return `Tamil translation of: ${text}`;
     }
-    
+
     // If no specific fallback is defined
     return `${toLang.toUpperCase()} translation of: ${text}`;
   }
@@ -159,49 +193,15 @@ async function performOCR(imageBuffer: Buffer): Promise<string> {
   }
 }
 
-// Function to calculate similarity between two strings
-function calculateSimilarity(str1: string, str2: string): number {
-  // Convert both strings to lowercase for case-insensitive comparison
-  const s1 = str1.toLowerCase();
-  const s2 = str2.toLowerCase();
-  
-  // Simple word matching algorithm
-  const words1 = s1.split(/\s+/);
-  const words2 = s2.split(/\s+/);
-  
-  // Count matching words
-  let matchCount = 0;
-  for (const word1 of words1) {
-    if (words2.includes(word1)) matchCount++;
-  }
-  
-  // Calculate score based on percentage of matching words
-  const maxWords = Math.max(words1.length, words2.length);
-  return maxWords > 0 ? (matchCount / maxWords) * 100 : 0;
-}
-
-// Generate feedback based on similarity score
-function generateFeedback(score: number, targetLanguage: string): string {
-  if (score >= 90) {
-    return `Excellent! Your ${targetLanguage} translation is very accurate.`;
-  } else if (score >= 75) {
-    return `Good job! Your ${targetLanguage} translation is mostly correct with minor differences.`;
-  } else if (score >= 50) {
-    return `Fair attempt. Your ${targetLanguage} translation has some correct elements but could be improved.`;
-  } else {
-    return `Keep practicing. Your ${targetLanguage} translation needs improvement. Try reviewing vocabulary and sentence structure.`;
-  }
-}
-
 export async function registerRoutes(app: Express) {
   app.post("/api/score-translation", async (req, res) => {
     try {
       const { originalText, userAnswer, targetLanguage } = req.body;
-      
+
       if (!originalText || !userAnswer || !targetLanguage) {
         return res.status(400).json({ message: "Missing required fields" });
       }
-      
+
       // Get the system translation
       let systemTranslation = "";
       if (targetLanguage === "english") {
@@ -211,14 +211,14 @@ export async function registerRoutes(app: Express) {
       } else {
         return res.status(400).json({ message: "Invalid target language" });
       }
-      
+
       // Calculate similarity score
       const similarityScore = calculateSimilarity(userAnswer, systemTranslation);
       const roundedScore = Math.round(similarityScore);
-      
+
       // Generate feedback
       const feedback = generateFeedback(roundedScore, targetLanguage);
-      
+
       res.json({
         score: roundedScore,
         systemTranslation,
@@ -313,8 +313,8 @@ export async function registerRoutes(app: Express) {
       res.json({ text: extractedText });
     } catch (error) {
       console.error('OCR error:', error);
-      res.status(500).json({ 
-        message: error instanceof Error ? error.message : "Failed to process image" 
+      res.status(500).json({
+        message: error instanceof Error ? error.message : "Failed to process image"
       });
     }
   });
