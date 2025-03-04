@@ -16,6 +16,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [currentTranscript, setCurrentTranscript] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
         description: "Speak in Hindi...",
       });
       setIsRecording(true);
+      setCurrentTranscript(''); // Clear transcript on start
     };
 
     recognitionInstance.onresult = async (event) => {
@@ -80,13 +82,15 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
         .map(result => result[0].transcript)
         .join(" ")
         .trim();
-      
+
       // Clean up the transcript (add spaces between words if needed)
       const cleanedTranscript = transcript
         .replace(/([।\u0964])/g, "$1 ") // Add space after Devanagari danda
         .replace(/(\S)(\s+)(\S)/g, "$1 $3") // Ensure single spaces between words
         .replace(/\s+/g, " ") // Replace multiple spaces with single space
         .trim();
+
+      setCurrentTranscript(cleanedTranscript); // Update transcript
 
       // Final result processing
       if (event.results[0].isFinal) {
@@ -184,6 +188,10 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
           ? "Recording... Click to stop"
           : "Click to start recording"}
       </p>
+      <div>
+        <p>Recognized Text:</p>
+        <pre>{currentTranscript}</pre>
+      </div>
     </div>
   );
 }
