@@ -62,8 +62,8 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     const recognitionInstance = new SpeechRecognitionAPI();
 
     recognitionInstance.lang = "hi-IN";
-    recognitionInstance.continuous = false; // Changed to false to get complete phrases
-    recognitionInstance.interimResults = false; // Changed to false for complete results
+    recognitionInstance.continuous = true; // Set to true to prevent auto-stopping
+    recognitionInstance.interimResults = true; // Set to true to show results as user speaks
     recognitionInstance.maxAlternatives = 1;
 
     recognitionInstance.onstart = () => {
@@ -116,11 +116,26 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     };
 
     recognitionInstance.onend = () => {
-      setIsRecording(false);
-      toast({
-        title: "Recording Ended",
-        description: "Processing your speech...",
-      });
+      // Only stop recording if manually stopped by user
+      if (isRecording) {
+        // Attempt to restart recognition if it stops unexpectedly
+        try {
+          recognitionInstance.start();
+        } catch (error) {
+          console.error("Could not restart recording:", error);
+          setIsRecording(false);
+          toast({
+            title: "Recording Ended",
+            description: "Recording stopped unexpectedly. Please try again.",
+          });
+        }
+      } else {
+        setIsRecording(false);
+        toast({
+          title: "Recording Ended",
+          description: "Processing your speech...",
+        });
+      }
     };
 
     try {
