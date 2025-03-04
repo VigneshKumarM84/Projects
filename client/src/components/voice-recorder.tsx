@@ -50,12 +50,21 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
       }
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognitionInstance = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
+      toast({
+        variant: "destructive",
+        title: "Browser Not Supported",
+        description: "Speech recognition is not supported in your browser. Please use Chrome or Edge.",
+      });
+      return;
+    }
+    const recognitionInstance = new SpeechRecognitionAPI();
 
     recognitionInstance.lang = "hi-IN";
-    recognitionInstance.continuous = true;
-    recognitionInstance.interimResults = true;
+    recognitionInstance.continuous = false; // Changed to false to get complete phrases
+    recognitionInstance.interimResults = false; // Changed to false for complete results
+    recognitionInstance.maxAlternatives = 1;
 
     recognitionInstance.onstart = () => {
       toast({
@@ -66,10 +75,20 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     };
 
     recognitionInstance.onresult = async (event) => {
+      // Get the most accurate transcript
       const transcript = Array.from(event.results)
         .map(result => result[0].transcript)
-        .join("");
+        .join(" ")
+        .trim();
+      
+      // Clean up the transcript (add spaces between words if needed)
+      const cleanedTranscript = transcript
+        .replace(/([।\u0964])/g, "$1 ") // Add space after Devanagari danda
+        .replace(/(\S)(\s+)(\S)/g, "$1 $3") // Ensure single spaces between words
+        .replace(/\s+/g, " ") // Replace multiple spaces with single space
+        .trim();
 
+      // Final result processing
       if (event.results[0].isFinal) {
         try {
           const response = await apiRequest("POST", "/api/translate", {
@@ -118,7 +137,11 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
 
   const stopRecording = () => {
     if (recognition) {
-      recognition.stop();
+      try {
+        recognition.stop();
+      } catch (error) {
+        console.error("Error stopping recognition:", error);
+      }
       setRecognition(null);
     }
     setIsRecording(false);
