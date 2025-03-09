@@ -53,14 +53,15 @@ export function WordByWordTranslation({ translations }: WordByWordTranslationPro
           <CardTitle>Sentence Translation</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Hindi</h3>
-            <p className="text-lg leading-relaxed">{hindiSentence}</p>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">English</h3>
-            <p className="text-lg leading-relaxed">{englishSentence}</p>
+          <div className="p-4 bg-gray-50 rounded space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Hindi</h3>
+              <p className="text-lg leading-relaxed">{hindiSentence}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-1">English</h3>
+              <p className="text-lg leading-relaxed">{englishSentence}</p>
+            </div>
           </div>
 
           <div className="mt-8">
