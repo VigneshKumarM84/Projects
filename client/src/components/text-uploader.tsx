@@ -33,19 +33,19 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
       setIsLoading(true);
       const formData = new FormData();
       formData.append('image', file);
-      
+
       try {
         const response = await fetch('/api/ocr', {
           method: 'POST',
           body: formData,
         });
-        
+
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.message || 'OCR processing failed');
         }
-        
+
         setText(data.text);
         toast({
           title: "Image processed successfully",
@@ -87,30 +87,44 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const handleTranslate = async () => {
     if (!text.trim()) {
       toast({
-        title: "No text to translate",
-        description: "Please enter some text to translate.",
-        variant: "destructive",
+        title: "Empty Text",
+        description: "Please enter some Hindi text to translate",
+      });
+      return;
+    }
+
+    // Check if text contains Hindi characters
+    const hindiPattern = /[\u0900-\u097F]/;
+    if (!hindiPattern.test(text)) {
+      toast({
+        title: "Not Hindi Text",
+        description: "Please enter text in Hindi language",
       });
       return;
     }
 
     setIsLoading(true);
-
     try {
-      const data = await apiRequest<{ hindi: string; english: string; tamil: string; wordByWord: Array<{ hindi: string; english: string; tamil: string }> }>("/api/translate/text", {
+      const res = await fetch("/api/translate/text", {
         method: "POST",
-        body: { text: text },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
       });
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Translation failed");
+      }
+
+      const data = await res.json();
       onTranslationComplete(data);
-      toast({
-        title: "Translation complete",
-        description: "Your text has been translated successfully.",
-      });
     } catch (error) {
+      console.error("Translation error:", error);
       toast({
-        title: "Translation failed",
-        description: "An error occurred during translation.",
+        title: "Translation Error",
+        description: "Failed to translate text. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -139,7 +153,7 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
               hover:file:bg-slate-100"
           />
         </div>
-        
+
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">Hindi Text Input</label>

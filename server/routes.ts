@@ -302,6 +302,12 @@ export async function registerRoutes(app: Express) {
     try {
       const { text } = req.body;
 
+      // Validate that the text contains Hindi characters
+      const hindiPattern = /[\u0900-\u097F]/;
+      if (!text || !hindiPattern.test(text)) {
+        return res.status(400).json({ message: "Please provide valid Hindi text" });
+      }
+
       // Get both full text and word-by-word translations
       const [
         [englishTranslation, tamilTranslation],
@@ -331,7 +337,9 @@ export async function registerRoutes(app: Express) {
       res.json(translations);
     } catch (error) {
       console.error('API error:', error);
-      res.status(500).json({ message: "Translation failed" });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Translation failed" 
+      });
     }
   });
 
