@@ -64,7 +64,7 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="min-h-[100px] whitespace-pre-wrap break-words overflow-auto max-h-[300px]">{text}</p>
+        <p className="min-h-[100px] whitespace-pre-wrap break-words overflow-auto max-h-[300px] text-wrap">{text}</p>
       </CardContent>
     </Card>
   );
@@ -73,6 +73,7 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
     <div className="grid gap-4 md:grid-cols-2">
       <TranslationCard language="Hindi" text={translations.hindi} />
       <TranslationCard language="English" text={translations.english} />
+      <TranslationCard language="Tamil" text={translations.tamil} />
     </div>
   );
 }

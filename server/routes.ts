@@ -90,8 +90,14 @@ async function translateText(text: string, fromLang: string, toLang: string) {
     const response = await fetch(`${url}?${params}`);
     const data = await response.json();
 
-    if (data && data[0] && data[0][0]) {
-      return data[0][0][0];
+    if (data && data[0]) {
+      // Combine all sentences in the translation
+      const translatedText = data[0]
+        .filter((item: any) => item && item[0])
+        .map((item: any) => item[0])
+        .join(' ');
+      
+      return translatedText;
     } else {
       throw new Error('Translation failed');
     }
