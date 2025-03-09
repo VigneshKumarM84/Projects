@@ -64,7 +64,7 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="min-h-[100px] whitespace-pre-wrap">{text}</p>
+        <p className="min-h-[100px] whitespace-pre-wrap break-words overflow-auto max-h-[300px]">{text}</p>
       </CardContent>
     </Card>
   );
