@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { LessonBrowser } from "@/components/lesson-browser";
 
 
 interface Translation {
@@ -253,6 +254,7 @@ export default function Home() {
               </Card>
             </>
           )}
+          <LessonBrowser /> {/* Added Lesson Browser component here */}
         </div>
       </div>
     </div>
