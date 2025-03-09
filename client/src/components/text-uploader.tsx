@@ -144,6 +144,10 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="min-h-[200px]"
+          lang="hi"
+          inputMode="text"
+          dir="ltr"
+          spellCheck={false}
         />
         <Button
           className="w-full"
