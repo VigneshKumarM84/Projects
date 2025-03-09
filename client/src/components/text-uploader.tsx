@@ -30,10 +30,37 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
     if (!file) return;
 
     if (file.type.startsWith("image/")) {
-      toast({
-        title: "Image upload not supported yet",
-        description: "Please use a text file or paste text directly.",
-      });
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      try {
+        const response = await fetch('/api/ocr', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'OCR processing failed');
+        }
+        
+        setText(data.text);
+        toast({
+          title: "Image processed successfully",
+          description: "Text extracted from image.",
+        });
+      } catch (error) {
+        console.error('OCR error:', error);
+        toast({
+          title: "Image processing failed",
+          description: error instanceof Error ? error.message : "Could not extract text from image",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
@@ -95,6 +122,7 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
     <Card className="mb-8">
       <CardHeader>
         <CardTitle className="text-xl">Hindi Text Input</CardTitle>
+        <p className="text-sm text-muted-foreground">Upload a text file, image with Hindi text, or type directly</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="w-full">
