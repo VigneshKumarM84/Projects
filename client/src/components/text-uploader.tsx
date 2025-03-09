@@ -139,16 +139,33 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
               hover:file:bg-slate-100"
           />
         </div>
-        <Textarea
-          placeholder="Or type/paste Hindi text here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="min-h-[200px]"
-          lang="hi"
-          inputMode="text"
-          dir="ltr"
-          spellCheck={false}
-        />
+        
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium">Hindi Text Input</label>
+            <a 
+              href="https://www.google.com/inputtools/try/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:underline"
+            >
+              Open Hindi Keyboard Tool
+            </a>
+          </div>
+          <Textarea
+            placeholder="Or type/paste Hindi text here..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="min-h-[200px]"
+            lang="hi"
+            inputMode="text"
+            dir="ltr"
+            spellCheck={false}
+          />
+          <p className="text-xs text-gray-500">
+            Keyboard shortcuts: Win+Space (Windows) or Command+Space (Mac) to switch input methods
+          </p>
+        </div>
         <Button
           className="w-full"
           onClick={handleTranslate}
