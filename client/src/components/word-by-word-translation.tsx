@@ -94,52 +94,57 @@ export function WordByWordTranslation({ translations, targetLanguage }: WordByWo
     </>
   );
 }
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
-interface WordByWordTranslationProps {
-  translations: Array<{
-    hindi?: string;
-    english?: string;
-    tamil?: string;
-    telugu?: string;
-    malayalam?: string;
-  }>;
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+interface Translation {
+  sourceText: string;
+  wordByWord?: {
+    [language: string]: {
+      words: {
+        source: string;
+        target: string;
+      }[];
+    };
+  };
 }
 
-export function WordByWordTranslation({ translations }: WordByWordTranslationProps) {
-  if (!translations || translations.length === 0) {
+interface WordByWordTranslationProps {
+  translations: Translation;
+  targetLanguage: string;
+}
+
+export function WordByWordTranslation({ translations, targetLanguage }: WordByWordTranslationProps) {
+  const words = useMemo(() => {
+    if (!translations.wordByWord || !translations.wordByWord[targetLanguage]) {
+      return [];
+    }
+    return translations.wordByWord[targetLanguage].words;
+  }, [translations, targetLanguage]);
+
+  if (!words.length) {
     return null;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Word by Word Translation</CardTitle>
+        <CardTitle className="text-lg">Word by Word Translation</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Hindi</TableHead>
-              <TableHead>English</TableHead>
-              <TableHead>Tamil</TableHead>
-              <TableHead>Telugu</TableHead>
-              <TableHead>Malayalam</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {translations.map((item, index) => (
-              <TableRow key={index}>
-                <TableCell>{item.hindi || "-"}</TableCell>
-                <TableCell>{item.english || "-"}</TableCell>
-                <TableCell>{item.tamil || "-"}</TableCell>
-                <TableCell>{item.telugu || "-"}</TableCell>
-                <TableCell>{item.malayalam || "-"}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="flex flex-wrap gap-2">
+          {words.map((word, index) => (
+            <Badge
+              key={index}
+              variant="outline"
+              className="flex flex-col items-start p-2"
+            >
+              <span className="font-medium">{word.source}</span>
+              <span className="text-xs text-gray-500">{word.target}</span>
+            </Badge>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
