@@ -94,3 +94,53 @@ export function WordByWordTranslation({ translations, targetLanguage }: WordByWo
     </>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+
+interface WordByWordTranslationProps {
+  translations: Array<{
+    hindi?: string;
+    english?: string;
+    tamil?: string;
+    telugu?: string;
+    malayalam?: string;
+  }>;
+}
+
+export function WordByWordTranslation({ translations }: WordByWordTranslationProps) {
+  if (!translations || translations.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Word by Word Translation</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Hindi</TableHead>
+              <TableHead>English</TableHead>
+              <TableHead>Tamil</TableHead>
+              <TableHead>Telugu</TableHead>
+              <TableHead>Malayalam</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {translations.map((item, index) => (
+              <TableRow key={index}>
+                <TableCell>{item.hindi || "-"}</TableCell>
+                <TableCell>{item.english || "-"}</TableCell>
+                <TableCell>{item.tamil || "-"}</TableCell>
+                <TableCell>{item.telugu || "-"}</TableCell>
+                <TableCell>{item.malayalam || "-"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}

@@ -150,3 +150,71 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
     </div>
   );
 }
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+
+interface TranslationDisplayProps {
+  translations: {
+    hindi?: string;
+    english?: string;
+    tamil?: string;
+    telugu?: string;
+    malayalam?: string;
+    wordByWord?: Array<any>;
+  };
+}
+
+export function TranslationDisplay({ translations }: TranslationDisplayProps) {
+  if (!translations || (!translations.hindi && !translations.english && !translations.tamil && !translations.telugu && !translations.malayalam)) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Translation Results</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="english">
+          <TabsList className="grid grid-cols-5">
+            <TabsTrigger value="hindi">Hindi</TabsTrigger>
+            <TabsTrigger value="english">English</TabsTrigger>
+            <TabsTrigger value="tamil">Tamil</TabsTrigger>
+            <TabsTrigger value="telugu">Telugu</TabsTrigger>
+            <TabsTrigger value="malayalam">Malayalam</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="hindi">
+            <div className="p-4 border rounded-md mt-2">
+              {translations.hindi || "No Hindi translation available"}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="english">
+            <div className="p-4 border rounded-md mt-2">
+              {translations.english || "No English translation available"}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="tamil">
+            <div className="p-4 border rounded-md mt-2">
+              {translations.tamil || "No Tamil translation available"}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="telugu">
+            <div className="p-4 border rounded-md mt-2">
+              {translations.telugu || "No Telugu translation available"}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="malayalam">
+            <div className="p-4 border rounded-md mt-2">
+              {translations.malayalam || "No Malayalam translation available"}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
