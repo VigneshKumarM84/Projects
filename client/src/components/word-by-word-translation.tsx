@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState, useMemo } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface WordByWordTranslationProps {
   translations: Array<{
@@ -39,7 +40,6 @@ export function WordByWordTranslation({ translations, targetLanguage }: WordByWo
   // Combine the translations into continuous sentences
   const sourceSentence = translations.map(t => t.sourceText).join(' ');
   const targetSentence = translations.map(t => getTranslation(t)).join(' ');
-
 
   return (
     <>
@@ -92,60 +92,5 @@ export function WordByWordTranslation({ translations, targetLanguage }: WordByWo
         </CardContent>
       </Card>
     </>
-  );
-}
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-interface Translation {
-  sourceText: string;
-  wordByWord?: {
-    [language: string]: {
-      words: {
-        source: string;
-        target: string;
-      }[];
-    };
-  };
-}
-
-interface WordByWordTranslationProps {
-  translations: Translation;
-  targetLanguage: string;
-}
-
-export function WordByWordTranslation({ translations, targetLanguage }: WordByWordTranslationProps) {
-  const words = useMemo(() => {
-    if (!translations.wordByWord || !translations.wordByWord[targetLanguage]) {
-      return [];
-    }
-    return translations.wordByWord[targetLanguage].words;
-  }, [translations, targetLanguage]);
-
-  if (!words.length) {
-    return null;
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Word by Word Translation</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-2">
-          {words.map((word, index) => (
-            <Badge
-              key={index}
-              variant="outline"
-              className="flex flex-col items-start p-2"
-            >
-              <span className="font-medium">{word.source}</span>
-              <span className="text-xs text-gray-500">{word.target}</span>
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   );
 }
