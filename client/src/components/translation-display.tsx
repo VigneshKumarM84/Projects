@@ -87,6 +87,47 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
         </Select>
       </div>
 
+      <TranslationCard
+        title={languageNames.sourceText}
+        content={translations.sourceText}
+        onCopy={copyToClipboard}
+        onDownload={(text, lang) => downloadText(text, lang)}
+      />
+
+      <TranslationCard
+        title="English"
+        content={translations.english}
+        onCopy={copyToClipboard}
+        onDownload={(text, lang) => downloadText(text, lang)}
+      />
+
+      {selectedLanguages.includes("tamil") && translations.tamil && (
+        <TranslationCard
+          title="Tamil"
+          content={translations.tamil}
+          onCopy={copyToClipboard}
+          onDownload={(text, lang) => downloadText(text, lang)}
+        />
+      )}
+
+      {selectedLanguages.includes("telugu") && translations.telugu && (
+        <TranslationCard
+          title="Telugu"
+          content={translations.telugu}
+          onCopy={copyToClipboard}
+          onDownload={(text, lang) => downloadText(text, lang)}
+        />
+      )}
+
+      {selectedLanguages.includes("malayalam") && translations.malayalam && (
+        <TranslationCard
+          title="Malayalam"
+          content={translations.malayalam}
+          onCopy={copyToClipboard}
+          onDownload={(text, lang) => downloadText(text, lang)}
+        />
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         <TranslationCard languageKey="sourceText" text={translations.sourceText} copyToClipboard={copyToClipboard} downloadText={downloadText} languageNames={languageNames}/>
         <TranslationCard languageKey="english" text={translations.english} copyToClipboard={copyToClipboard} downloadText={downloadText} languageNames={languageNames}/>
