@@ -1,20 +1,32 @@
+
 import { useState } from "react";
+import { Copy, Download } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Copy, Download } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TranslationDisplayProps {
   translations: {
-    hindi: string;
-    english: string;
-    tamil: string;
+    sourceText: string;
+    sourceLanguage: string;
+    english?: string;
+    tamil?: string;
+    telugu?: string;
+    malayalam?: string;
+    [key: string]: any;
   };
 }
 
 export function TranslationDisplay({ translations }: TranslationDisplayProps) {
   const { toast } = useToast();
-  const [showTamil, setShowTamil] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["english"]);
 
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -36,20 +48,50 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
     URL.revokeObjectURL(url);
   };
 
+  const handleLanguageChange = (value: string) => {
+    // Always include English and the selected language(s)
+    const newLanguages = value === "english" 
+      ? ["english"] 
+      : ["english", value];
+    
+    setSelectedLanguages(newLanguages);
+  };
+
+  // Language display names mapping
+  const languageNames: Record<string, string> = {
+    "sourceText": getSourceLanguageDisplayName(translations.sourceLanguage),
+    "english": "English",
+    "tamil": "Tamil",
+    "telugu": "Telugu",
+    "malayalam": "Malayalam"
+  };
+
+  // Convert API language code to display name
+  function getSourceLanguageDisplayName(code: string): string {
+    const sourceLanguageMap: Record<string, string> = {
+      "hi": "Hindi",
+      "ta": "Tamil",
+      "te": "Telugu",
+      "ml": "Malayalam",
+      "en": "English"
+    };
+    return sourceLanguageMap[code] || "Source Text";
+  }
+
   const TranslationCard = ({
-    language,
+    languageKey,
     text,
-    show,
   }: {
-    language: string;
-    text: string;
-    show: boolean;
-  }) => (
-    show && (
+    languageKey: string;
+    text?: string;
+  }) => {
+    if (!text) return null;
+    
+    return (
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
-            <span>{language}</span>
+            <span>{languageNames[languageKey] || languageKey}</span>
             <div className="space-x-2">
               <Button
                 variant="ghost"
@@ -61,7 +103,7 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => downloadText(text, language.toLowerCase())}
+                onClick={() => downloadText(text, languageKey)}
               >
                 <Download className="h-4 w-4" />
               </Button>
@@ -72,17 +114,39 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
           <p className="min-h-[100px] whitespace-pre-wrap break-words overflow-auto max-h-[300px] text-wrap">{text}</p>
         </CardContent>
       </Card>
-    )
-  );
+    );
+  };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <TranslationCard language="Hindi" text={translations.hindi} show={true} />
-      <TranslationCard language="English" text={translations.english} show={true} />
-      <TranslationCard language="Tamil" text={translations.tamil} show={showTamil} />
-      <Button onClick={() => setShowTamil(!showTamil)}>
-        {showTamil ? "Hide Tamil" : "Show Tamil"}
-      </Button>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Translations</h3>
+        <Select onValueChange={handleLanguageChange} defaultValue="english">
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select language" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="english">English Only</SelectItem>
+            <SelectItem value="tamil">Tamil</SelectItem>
+            <SelectItem value="telugu">Telugu</SelectItem>
+            <SelectItem value="malayalam">Malayalam</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <TranslationCard languageKey="sourceText" text={translations.sourceText} />
+        <TranslationCard languageKey="english" text={translations.english} />
+        {selectedLanguages.includes("tamil") && (
+          <TranslationCard languageKey="tamil" text={translations.tamil} />
+        )}
+        {selectedLanguages.includes("telugu") && (
+          <TranslationCard languageKey="telugu" text={translations.telugu} />
+        )}
+        {selectedLanguages.includes("malayalam") && (
+          <TranslationCard languageKey="malayalam" text={translations.malayalam} />
+        )}
+      </div>
     </div>
   );
 }

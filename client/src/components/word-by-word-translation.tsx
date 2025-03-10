@@ -4,43 +4,57 @@ import { useState, useMemo } from "react";
 
 interface WordByWordTranslationProps {
   translations: Array<{
-    hindi: string;
+    sourceText: string;
     english: string;
     tamil: string;
+    telugu: string;
+    malayalam: string;
   }>;
+  targetLanguage: string; // Added to select target language
 }
 
-export function WordByWordTranslation({ translations }: WordByWordTranslationProps) {
+export function WordByWordTranslation({ translations, targetLanguage }: WordByWordTranslationProps) {
   // Determine key words for highlighting (those longer than 3 characters)
   const keyWordIndices = useMemo(() => {
     const indices = new Set<number>();
     translations.forEach((translation, index) => {
       // Mark words longer than 3 characters as key words
-      if (translation.hindi.length > 3) {
+      if (translation.sourceText.length > 3) {
         indices.add(index);
       }
     });
     return indices;
   }, [translations]);
 
+  // Function to get the translation based on target language
+  const getTranslation = (translation: WordByWordTranslationProps["translations"][number]) => {
+    switch (targetLanguage) {
+      case "telugu": return translation.telugu;
+      case "malayalam": return translation.malayalam;
+      case "tamil": return translation.tamil;
+      default: return translation.english;
+    }
+  };
+
   // Combine the translations into continuous sentences
-  const hindiSentence = translations.map(t => t.hindi).join(' ');
-  const englishSentence = translations.map(t => t.english).join(' ');
+  const sourceSentence = translations.map(t => t.sourceText).join(' ');
+  const targetSentence = translations.map(t => getTranslation(t)).join(' ');
+
 
   return (
     <>
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Key Hindi Words</CardTitle>
+          <CardTitle>Key Words ({targetLanguage})</CardTitle> {/* Updated title */}
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {translations.map((translation, index) => (
               keyWordIndices.has(index) && (
                 <Badge key={index} variant="outline" className="text-lg py-2 px-3">
-                  <span className="font-semibold">{translation.hindi}</span>
+                  <span className="font-semibold">{translation.sourceText}</span>
                   <span className="mx-1">-</span>
-                  <span className="text-slate-600">{translation.english}</span>
+                  <span className="text-slate-600">{getTranslation(translation)}</span>
                 </Badge>
               )
             ))}
@@ -55,12 +69,12 @@ export function WordByWordTranslation({ translations }: WordByWordTranslationPro
         <CardContent className="space-y-6">
           <div className="p-4 bg-gray-50 rounded space-y-4">
             <div>
-              <h3 className="font-semibold text-lg mb-1">Hindi</h3>
-              <p className="text-lg leading-relaxed">{hindiSentence}</p>
+              <h3 className="font-semibold text-lg mb-1">Source Text</h3>
+              <p className="text-lg leading-relaxed">{sourceSentence}</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-1">English</h3>
-              <p className="text-lg leading-relaxed">{englishSentence}</p>
+              <h3 className="font-semibold text-lg mb-1">{targetLanguage}</h3>
+              <p className="text-lg leading-relaxed">{targetSentence}</p>
             </div>
           </div>
 
@@ -69,8 +83,8 @@ export function WordByWordTranslation({ translations }: WordByWordTranslationPro
             <div className="space-y-3">
               {translations.map((translation, index) => (
                 <div key={index} className={`p-2 rounded ${keyWordIndices.has(index) ? "bg-amber-50" : ""}`}>
-                  <div className="font-medium">{translation.hindi}</div>
-                  <div className="text-slate-600">{translation.english}</div>
+                  <div className="font-medium">{translation.sourceText}</div>
+                  <div className="text-slate-600">{getTranslation(translation)}</div>
                 </div>
               ))}
             </div>

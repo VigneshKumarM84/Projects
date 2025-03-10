@@ -20,6 +20,8 @@ export class MemStorage implements IStorage {
       ...translation,
       id,
       createdAt: new Date(),
+      telugu: translation.telugu || null,
+      malayalam: translation.malayalam || null,
     };
     this.translations.set(id, newTranslation);
     return newTranslation;

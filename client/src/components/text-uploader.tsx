@@ -5,16 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 interface TextUploaderProps {
   onTranslationComplete: (translations: {
     hindi: string;
     english: string;
     tamil: string;
+    telugu: string;
+    malayalam: string;
     wordByWord?: Array<{
       hindi: string;
       english: string;
       tamil: string;
+      telugu: string;
+      malayalam: string;
     }>;
   }) => void;
 }
@@ -22,8 +28,17 @@ interface TextUploaderProps {
 export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sourceLanguage, setSourceLanguage] = useState('hi'); // Default to Hindi
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const languageOptions = [
+    { value: 'hi', label: 'Hindi' },
+    { value: 'ta', label: 'Tamil' },
+    { value: 'te', label: 'Telugu' },
+    { value: 'ml', label: 'Malayalam' },
+  ];
+
 
   const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -88,43 +103,37 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
     if (!text.trim()) {
       toast({
         title: "Empty Text",
-        description: "Please enter some Hindi text to translate",
-      });
-      return;
-    }
-
-    // Check if text contains Hindi characters
-    const hindiPattern = /[\u0900-\u097F]/;
-    if (!hindiPattern.test(text)) {
-      toast({
-        title: "Not Hindi Text",
-        description: "Please enter text in Hindi language",
+        description: "Please enter some text to translate",
+        variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await fetch("/api/translate/text", {
-        method: "POST",
+      const response = await fetch('/api/translate/text', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ 
+          text,
+          sourceLanguage,
+          targetLanguages: ['en', 'ta', 'te', 'ml']  // Request all target languages
+        }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Translation failed");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to translate');
       }
 
-      const data = await res.json();
       onTranslationComplete(data);
     } catch (error) {
-      console.error("Translation error:", error);
       toast({
         title: "Translation Error",
-        description: "Failed to translate text. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to translate text",
         variant: "destructive",
       });
     } finally {
@@ -156,24 +165,31 @@ export function TextUploader({ onTranslationComplete }: TextUploaderProps) {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Hindi Text Input</label>
-            <a 
-              href="https://www.google.com/inputtools/try/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs text-blue-600 hover:underline"
+            <label className="text-sm font-medium">Source Language</label>
+            <Select 
+              value={sourceLanguage} 
+              onValueChange={setSourceLanguage}
             >
-              Open Hindi Keyboard Tool
-            </a>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languageOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Textarea
-            placeholder="Or type/paste Hindi text here..."
+            placeholder="Or type/paste text here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
             className="min-h-[200px]"
-            lang="hi"
+            lang={sourceLanguage} // Set language attribute dynamically
             inputMode="text"
-            dir="ltr"
+            dir="auto" // Let browser determine direction
             spellCheck={false}
           />
           <p className="text-xs text-gray-500">

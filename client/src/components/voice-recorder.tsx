@@ -1,23 +1,40 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Label } from '@headlessui/react'
 
 interface VoiceRecorderProps {
   onTranslationComplete: (translations: {
     hindi: string;
     english: string;
     tamil: string;
+    telugu: string;
+    malayalam: string;
   }) => void;
 }
 
 export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [transcription, setTranscription] = useState("");
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [sourceLanguage, setSourceLanguage] = useState("hi"); // Default to Hindi
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [currentTranscript, setCurrentTranscript] = useState<string>('');
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const { toast } = useToast();
+
+  // Language options
+  const languageOptions = [
+    { value: "hi", label: "Hindi" },
+    { value: "ta", label: "Tamil" },
+    { value: "te", label: "Telugu" },
+    { value: "ml", label: "Malayalam" }
+  ];
 
   useEffect(() => {
     // Check if browser supports SpeechRecognition
@@ -62,44 +79,37 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     }
     const recognitionInstance = new SpeechRecognitionAPI();
 
-    recognitionInstance.lang = "hi-IN";
-    recognitionInstance.continuous = true; // Set to true to prevent auto-stopping
-    recognitionInstance.interimResults = true; // Set to true to show results as user speaks
+    recognitionInstance.lang = sourceLanguage;
+    recognitionInstance.continuous = true; 
+    recognitionInstance.interimResults = true; 
     recognitionInstance.maxAlternatives = 1;
 
     recognitionInstance.onstart = () => {
       toast({
         title: "Recording Started",
-        description: "Speak in Hindi...",
+        description: "Speak in your selected language...",
       });
       setIsRecording(true);
-      setCurrentTranscript(''); // Clear transcript on start
+      setCurrentTranscript(''); 
     };
 
     recognitionInstance.onresult = async (event) => {
-      // Get the most accurate transcript
       const transcript = Array.from(event.results)
         .map(result => result[0].transcript)
         .join(" ")
         .trim();
 
-      // Clean up the transcript (add spaces between words if needed)
       const cleanedTranscript = transcript
-        .replace(/([।\u0964])/g, "$1 ") // Add space after Devanagari danda
-        .replace(/(\S)(\s+)(\S)/g, "$1 $3") // Ensure single spaces between words
-        .replace(/\s+/g, " ") // Replace multiple spaces with single space
+        .replace(/([।\u0964])/g, "$1 ") 
+        .replace(/(\S)(\s+)(\S)/g, "$1 $3") 
+        .replace(/\s+/g, " ") 
         .trim();
 
-      setCurrentTranscript(cleanedTranscript); // Update transcript
+      setCurrentTranscript(cleanedTranscript); 
 
-      // Final result processing
       if (event.results[0].isFinal) {
         try {
-          const response = await apiRequest("POST", "/api/translate", {
-            text: transcript,
-          });
-          const translations = await response.json();
-          onTranslationComplete(translations);
+          await translateText(cleanedTranscript);
         } catch (error) {
           toast({
             variant: "destructive",
@@ -120,9 +130,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     };
 
     recognitionInstance.onend = () => {
-      // Only stop recording if manually stopped by user
       if (isRecording) {
-        // Attempt to restart recognition if it stops unexpectedly
         try {
           recognitionInstance.start();
         } catch (error) {
@@ -154,6 +162,40 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     }
   };
 
+  const translateText = async (text: string) => {
+    setIsTranslating(true);
+    try {
+      const response = await fetch('/api/translate/text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          text,
+          sourceLanguage,
+          targetLanguages: ['en', 'ta', 'te', 'ml']  
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to translate');
+      }
+
+      onTranslationComplete(data);
+    } catch (error) {
+      toast({
+        title: "Translation Error",
+        description: error instanceof Error ? error.message : "Failed to translate speech",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+
   const stopRecording = () => {
     if (recognition) {
       try {
@@ -167,7 +209,26 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <Label htmlFor="source-language">Input Language</Label>
+        <Select 
+          value={sourceLanguage} 
+          onValueChange={setSourceLanguage}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select language" />
+          </SelectTrigger>
+          <SelectContent>
+            {languageOptions.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Button
         size="lg"
         variant={isRecording ? "destructive" : "default"}

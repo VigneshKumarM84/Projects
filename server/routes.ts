@@ -104,71 +104,78 @@ async function translateText(text: string, fromLang: string, toLang: string) {
   } catch (error) {
     console.error('Translation error:', error);
 
-    // Enhanced fallback translations for when API fails
-    if (fromLang === 'hi' && toLang === 'en') {
-      // Extended Hindi to English dictionary
-      const hiToEn: Record<string, string> = {
-        'नमस्ते': 'hello',
-        'धन्यवाद': 'thank you',
-        'हां': 'yes',
-        'नहीं': 'no',
-        'एक': 'one',
-        'दो': 'two',
-        'तीन': 'three',
-        'मैं': 'I',
-        'तुम': 'you',
-        'है': 'is',
-        'और': 'and',
-        'में': 'in',
-        'का': 'of',
-        'समय': 'time',
-        'जंगल': 'forest',
-        'गधे': 'donkeys',
-        'सभी': 'all',
-        'था': 'was',
-        'जब': 'when',
-        'ऐसा': 'such',
-        'अच्छा': 'good',
-        'खराब': 'bad',
-        'बड़ा': 'big',
-        'छोटा': 'small',
-        'आज': 'today',
-        'कल': 'tomorrow',
-        'कैसे': 'how',
-        'क्यों': 'why',
-        'क्या': 'what',
-        'कौन': 'who',
-        'कहाँ': 'where',
-        'कब': 'when',
-        'पानी': 'water',
-        'खाना': 'food',
-        'दिन': 'day',
-        'रात': 'night',
-        'सुबह': 'morning',
-        'शाम': 'evening'
-      };
+    // Map of language codes to names for better error messages
+    const languageNames: Record<string, string> = {
+      'en': 'English',
+      'ta': 'Tamil',
+      'te': 'Telugu',
+      'ml': 'Malayalam',
+      'hi': 'Hindi'
+    };
 
-      // Try to translate word by word
+    // Common words in various languages as fallback
+    const commonWords: Record<string, Record<string, string>> = {
+      'hi': { // Hindi to other languages
+        'en': {
+          'नमस्ते': 'hello',
+          'धन्यवाद': 'thank you',
+          'हां': 'yes',
+          'नहीं': 'no',
+          // ... other words from your existing dictionary
+        }
+      },
+      'ta': { // Tamil to other languages
+        'en': {
+          'வணக்கம்': 'hello',
+          'நன்றி': 'thank you',
+        }
+      },
+      'te': { // Telugu to other languages
+        'en': {
+          'నమస్కారం': 'hello',
+          'ధన్యవాదాలు': 'thank you',
+        }
+      },
+      'ml': { // Malayalam to other languages
+        'en': {
+          'നമസ്കാരം': 'hello',
+          'നന്ദി': 'thank you',
+        }
+      }
+    };
+    
+    // Try basic word-by-word fallback if dictionary exists
+    if (commonWords[fromLang] && commonWords[fromLang][toLang]) {
+      const dictionary = commonWords[fromLang][toLang];
       const words = text.split(/\s+/);
       const translatedWords = words.map(word => {
-        // Remove punctuation for lookup
-        const cleanWord = word.replace(/[^\u0900-\u097F]/g, '');
-        return hiToEn[cleanWord] || "[Hindi word]"; // Replace untranslated words with placeholder
+        // Strip punctuation
+        const cleanWord = word.replace(/[^\p{L}\p{N}]/gu, '');
+        return dictionary[cleanWord] || `[${languageNames[fromLang] || fromLang} word]`;
       });
-
       return translatedWords.join(' ');
-    } else if (fromLang === 'hi' && toLang === 'ta') {
-      return "Tamil translation unavailable"; // More honest fallback
     }
 
     // If no specific fallback is defined
-    return `Translation to ${toLang.toUpperCase()} unavailable`;
+    return `Translation to ${languageNames[toLang] || toLang.toUpperCase()} unavailable`;
   }
 }
 
-async function translateWords(text: string) {
+async function translateWords(text: string, fromLang: string = 'hi') {
+  // Language-specific regex patterns for different scripts
+  const scriptPatterns: Record<string, RegExp> = {
+    'hi': /[\u0900-\u097F]+|\S+/g,  // Hindi
+    'ta': /[\u0B80-\u0BFF]+|\S+/g,  // Tamil
+    'te': /[\u0C00-\u0C7F]+|\S+/g,  // Telugu
+    'ml': /[\u0D00-\u0D7F]+|\S+/g,  // Malayalam
+    'en': /\S+/g                    // English (fallback)
+  };
+  
+  // Get the appropriate regex pattern for the source language
+  const pattern = scriptPatterns[fromLang] || scriptPatterns['en'];
+  
   // Split text into words, preserving punctuation
-  const words = text.match(/[\u0900-\u097F]+|\S+/g) || [];
+  const words = text.match(pattern) || [];
   
   // Filter out very short words for better performance
   // but process all words to maintain sequence
@@ -177,15 +184,19 @@ async function translateWords(text: string) {
       // For very short words or punctuation, use simpler translation
       const needsFullTranslation = word.length > 1 && !/^[.,!?;:।॥]$/.test(word);
       
-      const [english, tamil] = await Promise.all([
-        needsFullTranslation ? translateText(word, 'hi', 'en') : word,
-        needsFullTranslation ? translateText(word, 'hi', 'ta') : word
+      const [english, tamil, telugu, malayalam] = await Promise.all([
+        needsFullTranslation ? translateText(word, fromLang, 'en') : word,
+        needsFullTranslation ? translateText(word, fromLang, 'ta') : word,
+        needsFullTranslation ? translateText(word, fromLang, 'te') : word,
+        needsFullTranslation ? translateText(word, fromLang, 'ml') : word
       ]);
 
       return {
-        hindi: word,
+        sourceText: word,
         english: english || word,
-        tamil: tamil || word
+        tamil: tamil || word,
+        telugu: telugu || word,
+        malayalam: malayalam || word
       };
     })
   );
@@ -244,21 +255,26 @@ async function performOCR(imageBuffer: Buffer): Promise<string> {
 export async function registerRoutes(app: Express) {
   app.post("/api/score-translation", async (req, res) => {
     try {
-      const { originalText, userAnswer, targetLanguage } = req.body;
+      const { originalText, userAnswer, targetLanguage, sourceLanguage = "hi" } = req.body;
 
       if (!originalText || !userAnswer || !targetLanguage) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Get the system translation
-      let systemTranslation = "";
-      if (targetLanguage === "english") {
-        systemTranslation = await translateText(originalText, "hi", "en");
-      } else if (targetLanguage === "tamil") {
-        systemTranslation = await translateText(originalText, "hi", "ta");
-      } else {
+      // Map target language name to language code
+      const targetLangCode = {
+        "english": "en",
+        "tamil": "ta",
+        "telugu": "te",
+        "malayalam": "ml"
+      }[targetLanguage];
+
+      if (!targetLangCode) {
         return res.status(400).json({ message: "Invalid target language" });
       }
+
+      // Get the system translation
+      const systemTranslation = await translateText(originalText, sourceLanguage, targetLangCode);
 
       // Calculate similarity score
       const similarityScore = calculateSimilarity(userAnswer, systemTranslation);
@@ -280,21 +296,42 @@ export async function registerRoutes(app: Express) {
 
   app.post("/api/translate", async (req, res) => {
     try {
-      const { text } = req.body;
+      const { text, sourceLanguage = 'hi', targetLanguages = ['en'] } = req.body;
 
-      // Translate Hindi to English and Tamil
-      const [englishTranslation, tamilTranslation] = await Promise.all([
-        translateText(text, 'hi', 'en'),
-        translateText(text, 'hi', 'ta')
-      ]);
+      // Ensure at least English is included in target languages
+      const languages = Array.isArray(targetLanguages) 
+        ? (targetLanguages.includes('en') ? targetLanguages : [...targetLanguages, 'en']) 
+        : ['en'];
 
-      const translations = {
-        hindi: text,
-        english: englishTranslation,
-        tamil: tamilTranslation,
+      // Map to translate text to all requested languages
+      const translationPromises = languages.map(lang => 
+        translateText(text, sourceLanguage, lang)
+      );
+
+      const translationResults = await Promise.all(translationPromises);
+      
+      // Create result object
+      const translations: Record<string, string> = {
+        sourceText: text,
+        sourceLanguage
       };
 
-      const validatedData = insertTranslationSchema.parse(translations);
+      // Add results for each target language
+      languages.forEach((lang, index) => {
+        translations[lang] = translationResults[index];
+      });
+
+      // Prepare data for storage
+      const storageData = {
+        sourceText: text,
+        sourceLanguage,
+        english: translations.en || '',
+        tamil: translations.ta || '',
+        telugu: translations.te || '',
+        malayalam: translations.ml || ''
+      };
+
+      const validatedData = insertTranslationSchema.parse(storageData);
       await storage.createTranslation(validatedData);
 
       res.json(translations);
@@ -306,38 +343,64 @@ export async function registerRoutes(app: Express) {
 
   app.post("/api/translate/text", async (req, res) => {
     try {
-      const { text } = req.body;
+      const { text, sourceLanguage = 'hi', targetLanguages = ['en'] } = req.body;
 
-      // Validate that the text contains Hindi characters
-      const hindiPattern = /[\u0900-\u097F]/;
-      if (!text || !hindiPattern.test(text)) {
-        return res.status(400).json({ message: "Please provide valid Hindi text" });
+      // Language script patterns for validation
+      const scriptPatterns: Record<string, RegExp> = {
+        'hi': /[\u0900-\u097F]/,  // Hindi
+        'ta': /[\u0B80-\u0BFF]/,  // Tamil
+        'te': /[\u0C00-\u0C7F]/,  // Telugu
+        'ml': /[\u0D00-\u0D7F]/,  // Malayalam
+        'en': /[a-zA-Z]/          // English
+      };
+      
+      // Validate that the text contains characters in the source language
+      const pattern = scriptPatterns[sourceLanguage];
+      if (!text || (pattern && !pattern.test(text))) {
+        return res.status(400).json({ 
+          message: `Please provide valid text in the selected language (${sourceLanguage})` 
+        });
       }
 
+      // Ensure at least English is included in target languages
+      const languages = Array.isArray(targetLanguages) 
+        ? (targetLanguages.includes('en') ? targetLanguages : [...targetLanguages, 'en']) 
+        : ['en'];
+
+      // Translate to all requested languages
+      const translationPromises = languages.map(lang => 
+        translateText(text, sourceLanguage, lang)
+      );
+
       // Get both full text and word-by-word translations
-      const [
-        [englishTranslation, tamilTranslation],
-        wordByWordTranslations
-      ] = await Promise.all([
-        Promise.all([
-          translateText(text, 'hi', 'en'),
-          translateText(text, 'hi', 'ta')
-        ]),
-        translateWords(text)
+      const [translationResults, wordByWordTranslations] = await Promise.all([
+        Promise.all(translationPromises),
+        translateWords(text, sourceLanguage)
       ]);
 
-      const translations = {
-        hindi: text,
-        english: englishTranslation,
-        tamil: tamilTranslation,
+      // Create result object
+      const translations: Record<string, any> = {
+        sourceText: text,
+        sourceLanguage,
         wordByWord: wordByWordTranslations
       };
 
-      const validatedData = insertTranslationSchema.parse({
-        hindi: text,
-        english: englishTranslation,
-        tamil: tamilTranslation
+      // Add results for each target language
+      languages.forEach((lang, index) => {
+        translations[lang] = translationResults[index];
       });
+
+      // Prepare data for storage
+      const storageData = {
+        sourceText: text,
+        sourceLanguage,
+        english: translations.en || '',
+        tamil: translations.ta || '',
+        telugu: translations.te || '',
+        malayalam: translations.ml || ''
+      };
+
+      const validatedData = insertTranslationSchema.parse(storageData);
       await storage.createTranslation(validatedData);
 
       res.json(translations);

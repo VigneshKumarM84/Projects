@@ -27,7 +27,12 @@ interface ScoreResult {
   feedback: string;
 }
 
-function AnswerInput({ originalText, targetLanguage, onScoreResult }: { originalText: string; targetLanguage: "english" | "tamil"; onScoreResult: (result: ScoreResult | null) => void }) {
+function AnswerInput({ originalText, sourceLanguage, targetLanguage, onScoreResult }: { 
+  originalText: string; 
+  sourceLanguage: string;
+  targetLanguage: "english" | "tamil" | "telugu" | "malayalam"; 
+  onScoreResult: (result: ScoreResult | null) => void 
+}) {
   const [userAnswer, setUserAnswer] = useState("");
 
   const handleSubmit = async () => {
@@ -39,6 +44,7 @@ function AnswerInput({ originalText, targetLanguage, onScoreResult }: { original
         },
         body: JSON.stringify({
           originalText,
+          sourceLanguage,
           userAnswer,
           targetLanguage
         }),
@@ -143,10 +149,11 @@ export default function Home() {
           <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200">
             <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
             <ol className="list-decimal list-inside space-y-2 text-sm">
-              <li><span className="font-medium">Voice Input:</span> Click the microphone button and speak Hindi to translate.</li>
-              <li><span className="font-medium">Text Input:</span> Type or paste Hindi text and click "Translate".</li>
-              <li><span className="font-medium">Practice Exercises:</span> Select a pre-made exercise from the list below to practice translation.</li>
-              <li><span className="font-medium">Translation Practice:</span> Enter your translation in the text area and click "Check My Translation" to get feedback.</li>
+              <li><span className="font-medium">Multiple Languages:</span> Choose from Hindi, Tamil, Telugu, or Malayalam as your source language.</li>
+              <li><span className="font-medium">Voice Input:</span> Select your language, click the microphone button, and speak to translate.</li>
+              <li><span className="font-medium">Text Input:</span> Type or paste text in your chosen language and click "Translate".</li>
+              <li><span className="font-medium">Translation Options:</span> English translations are shown by default. Select additional languages as needed.</li>
+              <li><span className="font-medium">Translation Practice:</span> Select a target language tab and enter your translation to get feedback.</li>
             </ol>
           </div>
         </div>
@@ -180,7 +187,7 @@ export default function Home() {
             <WordByWordTranslation translations={translations.wordByWord} />
           )}
 
-          {translations.hindi && (
+          {translations.sourceText && (
             <>
               <Separator className="my-4" />
               <Card>
@@ -188,11 +195,50 @@ export default function Home() {
                   <CardTitle>Practice Your Translation Skills</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <AnswerInput 
-                    originalText={translations.hindi} 
-                    targetLanguage="english"
-                    onScoreResult={setEnglishScoreResult}
-                  />
+                  <Tabs defaultValue="english">
+                    <TabsList>
+                      <TabsTrigger value="english">English</TabsTrigger>
+                      <TabsTrigger value="tamil">Tamil</TabsTrigger>
+                      <TabsTrigger value="telugu">Telugu</TabsTrigger>
+                      <TabsTrigger value="malayalam">Malayalam</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="english">
+                      <AnswerInput 
+                        originalText={translations.sourceText}
+                        sourceLanguage={translations.sourceLanguage || "hi"} 
+                        targetLanguage="english"
+                        onScoreResult={setEnglishScoreResult}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="tamil">
+                      <AnswerInput 
+                        originalText={translations.sourceText}
+                        sourceLanguage={translations.sourceLanguage || "hi"}
+                        targetLanguage="tamil"
+                        onScoreResult={setEnglishScoreResult}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="telugu">
+                      <AnswerInput 
+                        originalText={translations.sourceText}
+                        sourceLanguage={translations.sourceLanguage || "hi"}
+                        targetLanguage="telugu"
+                        onScoreResult={setEnglishScoreResult}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="malayalam">
+                      <AnswerInput 
+                        originalText={translations.sourceText}
+                        sourceLanguage={translations.sourceLanguage || "hi"}
+                        targetLanguage="malayalam"
+                        onScoreResult={setEnglishScoreResult}
+                      />
+                    </TabsContent>
+                  </Tabs>
 
                   {englishScoreResult && (
                     <ScoreDisplay 
