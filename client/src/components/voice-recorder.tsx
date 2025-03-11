@@ -95,11 +95,12 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
       case 'ml':
         recognitionInstance.lang = 'ml-IN'; // Malayalam
         break;
+      case 'en':
+        recognitionInstance.lang = 'en-US'; // English
+        break;
       default:
         recognitionInstance.lang = 'hi-IN'; // Default to Hindi
     }
-
-    recognitionInstance.lang = sourceLanguage;
     recognitionInstance.continuous = true; 
     recognitionInstance.interimResults = true; 
     recognitionInstance.maxAlternatives = 1;
@@ -247,7 +248,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
             ))}
           </SelectContent>
         </Select>
-      </div>v>
+      </div>
 
       <Button
         size="lg"

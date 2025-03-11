@@ -1,14 +1,15 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiRequest } from "@/lib/api";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AnswerInputProps {
   originalText: string;
-  targetLanguage: "english" | "tamil";
+  sourceLanguage: string;
+  targetLanguage: "english" | "hindi" | "tamil" | "telugu" | "malayalam";
   onScoreResult: (score: {
     userAnswer: string;
     score: number;
@@ -16,7 +17,7 @@ interface AnswerInputProps {
   }) => void;
 }
 
-export function AnswerInput({ originalText, targetLanguage, onScoreResult }: AnswerInputProps) {
+export function AnswerInput({ originalText, sourceLanguage, targetLanguage, onScoreResult }: AnswerInputProps) {
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -38,6 +39,7 @@ export function AnswerInput({ originalText, targetLanguage, onScoreResult }: Ans
         originalText,
         userAnswer: answer,
         targetLanguage,
+        sourceLanguage,
       });
       
       const result = await response.json();

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { VoiceRecorder } from "@/components/voice-recorder";
 import { TextUploader } from "@/components/text-uploader";
@@ -8,18 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { LessonBrowser } from "@/components/lesson-browser";
-
-
-interface Translation {
-  hindi: string;
-  english: string;
-  tamil: string;
-  wordByWord?: Array<{
-    hindi: string;
-    english: string;
-    tamil: string;
-  }>;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AnswerInput } from "@/components/answer-input";
 
 interface ScoreResult {
   userAnswer: string;
@@ -27,287 +18,315 @@ interface ScoreResult {
   feedback: string;
 }
 
-function AnswerInput({ originalText, sourceLanguage, targetLanguage, onScoreResult }: { 
-  originalText: string; 
+interface Translation {
+  sourceText: string;
   sourceLanguage: string;
-  targetLanguage: "english" | "tamil" | "telugu" | "malayalam"; 
-  onScoreResult: (result: ScoreResult | null) => void 
-}) {
-  const [userAnswer, setUserAnswer] = useState("");
-
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch('/api/score-translation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          originalText,
-          sourceLanguage,
-          userAnswer,
-          targetLanguage
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message);
-      }
-
-      onScoreResult({ userAnswer, score: result.score, feedback: result.feedback });
-    } catch (error) {
-      console.error('Scoring error:', error);
-      onScoreResult(null);
-    }
+  english?: string;
+  tamil?: string;
+  telugu?: string;
+  malayalam?: string;
+  hindi?: string;
+  wordByWord?: Array<{
+    sourceText: string;
+    english: string;
+    tamil: string;
+    telugu: string;
+    malayalam: string;
+  }>;
+  fullTranslation?: {
+    english: string;
+    tamil: string;
+    telugu: string;
+    malayalam: string;
   };
+}
 
+function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) {
+  let bgColor = "bg-red-100";
+  let textColor = "text-red-800";
+  
+  if (score >= 85) {
+    bgColor = "bg-green-100";
+    textColor = "text-green-800";
+  } else if (score >= 65) {
+    bgColor = "bg-yellow-100";
+    textColor = "text-yellow-800";
+  } else if (score >= 40) {
+    bgColor = "bg-orange-100";
+    textColor = "text-orange-800";
+  }
+  
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <p className="font-medium">Translate the Hindi text to {targetLanguage}:</p>
-        <textarea 
-          className="w-full min-h-[120px] p-3 border rounded-md"
-          placeholder={`Enter your ${targetLanguage} translation...`}
-          value={userAnswer}
-          onChange={(e) => setUserAnswer(e.target.value)}
-        />
-        <Button onClick={handleSubmit}>Check My Translation</Button>
+    <div className={`p-4 rounded-md ${bgColor} ${textColor} mt-4`}>
+      <div className="flex items-center justify-between">
+        <span className="font-semibold">Score: {score}%</span>
       </div>
+      <p className="mt-2">{feedback}</p>
     </div>
   );
 }
-
-function ScoreDisplay({ scoreResult, systemTranslation, targetLanguage }: { scoreResult: ScoreResult; systemTranslation: string; targetLanguage: "english" | "tamil" }) {
-  // Get color based on score with more generous thresholds
-  const getScoreColor = (score: number) => {
-    if (score >= 70) return "text-green-600";
-    if (score >= 45) return "text-yellow-600";
-    return "text-amber-600"; // Less harsh than red
-  };
-
-  // Check if the translation appears to be unsuccessful
-  const isInvalidTranslation = (translation: string) => {
-    return translation.includes("Translation to") || 
-           translation.includes("unavailable") ||
-           translation.includes("[Hindi");
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center">
-        <span className="font-bold mr-2">Score:</span>
-        <span className={`font-bold text-xl ${getScoreColor(scoreResult.score)}`}>
-          {scoreResult.score}/100
-        </span>
-      </div>
-
-      <div>
-        <p className="font-medium mb-1">Your Translation:</p>
-        <p className="p-2 bg-gray-100 rounded">{scoreResult.userAnswer}</p>
-      </div>
-
-      <div>
-        <p className="font-medium mb-1">System Translation:</p>
-        <p className="p-2 bg-gray-100 rounded">
-          {isInvalidTranslation(systemTranslation) ? 
-            <span className="text-amber-600">Translation API may be unavailable - please try again later</span> : 
-            systemTranslation
-          }
-        </p>
-      </div>
-
-      <div>
-        <p className="font-medium mb-1">Feedback:</p>
-        <p className="p-2 bg-gray-100 rounded">{scoreResult.feedback}</p>
-      </div>
-    </div>
-  );
-}
-
 
 export default function Home() {
   const [translations, setTranslations] = useState<Translation>({
-    hindi: "",
-    english: "",
-    tamil: "",
-    wordByWord: [],
+    sourceText: "",
+    sourceLanguage: "",
   });
-
+  
   const [englishScoreResult, setEnglishScoreResult] = useState<ScoreResult | null>(null);
-
+  const [tamilScoreResult, setTamilScoreResult] = useState<ScoreResult | null>(null);
+  const [teluguScoreResult, setTeluguScoreResult] = useState<ScoreResult | null>(null);
+  const [malayalamScoreResult, setMalayalamScoreResult] = useState<ScoreResult | null>(null);
+  const [hindiScoreResult, setHindiScoreResult] = useState<ScoreResult | null>(null);
+  
+  const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
+  const [inputMethod, setInputMethod] = useState<string>("");
+  const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
+  
+  // All available languages
+  const allLanguages = [
+    { value: "en", label: "English" },
+    { value: "hi", label: "Hindi" },
+    { value: "ta", label: "Tamil" },
+    { value: "te", label: "Telugu" },
+    { value: "ml", label: "Malayalam" }
+  ];
+  
+  // Filter out the selected input language from target language options
+  const availableTargetLanguages = allLanguages.filter(lang => 
+    lang.value !== selectedInputLanguage
+  );
+  
+  // Handle target language selection/deselection
+  const toggleTargetLanguage = (langCode: string) => {
+    if (targetLanguages.includes(langCode)) {
+      setTargetLanguages(targetLanguages.filter(lang => lang !== langCode));
+    } else {
+      setTargetLanguages([...targetLanguages, langCode]);
+    }
+  };
+  
+  // Map language codes to language names
+  const languageNames: Record<string, string> = {
+    sourceText: selectedInputLanguage === "en" ? "English" : 
+                selectedInputLanguage === "hi" ? "Hindi" :
+                selectedInputLanguage === "ta" ? "Tamil" :
+                selectedInputLanguage === "te" ? "Telugu" :
+                selectedInputLanguage === "ml" ? "Malayalam" : "Source",
+    english: "English",
+    hindi: "Hindi",
+    tamil: "Tamil",
+    telugu: "Telugu",
+    malayalam: "Malayalam"
+  };
+  
+  // Reset states when input language changes
+  const handleInputLanguageChange = (lang: string) => {
+    setSelectedInputLanguage(lang);
+    setInputMethod("");
+    setTargetLanguages([]);
+    setTranslations({
+      sourceText: "",
+      sourceLanguage: lang,
+    });
+    setEnglishScoreResult(null);
+    setTamilScoreResult(null);
+    setTeluguScoreResult(null);
+    setMalayalamScoreResult(null);
+    setHindiScoreResult(null);
+  };
+  
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">Voice & Text Translation</h1>
-          <p className="text-muted-foreground">
-            Translate Hindi to English using voice or text
-          </p>
-
-          <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200">
-            <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
-            <ol className="list-decimal list-inside space-y-2 text-sm">
-              <li><span className="font-medium">Multiple Languages:</span> Choose from Hindi, Tamil, Telugu, or Malayalam as your source language.</li>
-              <li><span className="font-medium">Voice Input:</span> Select your language, click the microphone button, and speak to translate.</li>
-              <li><span className="font-medium">Text Input:</span> Type or paste text in your chosen language and click "Translate".</li>
-              <li><span className="font-medium">Translation Options:</span> English translations are shown by default. Select additional languages as needed.</li>
-              <li><span className="font-medium">Translation Practice:</span> Select a target language tab and enter your translation to get feedback.</li>
-            </ol>
-          </div>
-        </div>
-
-        <Tabs defaultValue="voice">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="voice">Voice Input</TabsTrigger>
-            <TabsTrigger value="text">Text Input</TabsTrigger>
-          </TabsList>
-          <div className="mt-2 text-center">
-            <a href="https://www.google.com/inputtools/try/" target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">
-              Need help typing in Indian languages? Try Google Input Tools
-            </a>
-          </div>
-
-          <TabsContent value="voice">
-            <Card>
-              <CardHeader>
-                <CardTitle>Record Voice</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VoiceRecorder onTranslationComplete={setTranslations} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="text">
-            <TextUploader onTranslationComplete={setTranslations} />
-          </TabsContent>
-        </Tabs>
-
-        <div className="space-y-4">
-          <TranslationDisplay translations={translations} />
-
-          {translations.wordByWord && translations.wordByWord.length > 0 && (
-            <WordByWordTranslation translations={translations.wordByWord} />
-          )}
-
-          {translations.sourceText && (
-            <>
-              <Separator className="my-4" />
-              <Card>
-                <CardHeader>
-                  <CardTitle>Practice Your Translation Skills</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="english">
-                    <TabsList>
-                      <TabsTrigger value="english">English</TabsTrigger>
-                      <TabsTrigger value="tamil">Tamil</TabsTrigger>
-                      <TabsTrigger value="telugu">Telugu</TabsTrigger>
-                      <TabsTrigger value="malayalam">Malayalam</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="english">
-                      <AnswerInput 
-                        originalText={translations.sourceText}
-                        sourceLanguage={translations.sourceLanguage || "hi"} 
-                        targetLanguage="english"
-                        onScoreResult={setEnglishScoreResult}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="tamil">
-                      <AnswerInput 
-                        originalText={translations.sourceText}
-                        sourceLanguage={translations.sourceLanguage || "hi"}
-                        targetLanguage="tamil"
-                        onScoreResult={setEnglishScoreResult}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="telugu">
-                      <AnswerInput 
-                        originalText={translations.sourceText}
-                        sourceLanguage={translations.sourceLanguage || "hi"}
-                        targetLanguage="telugu"
-                        onScoreResult={setEnglishScoreResult}
-                      />
-                    </TabsContent>
-                    
-                    <TabsContent value="malayalam">
-                      <AnswerInput 
-                        originalText={translations.sourceText}
-                        sourceLanguage={translations.sourceLanguage || "hi"}
-                        targetLanguage="malayalam"
-                        onScoreResult={setEnglishScoreResult}
-                      />
-                    </TabsContent>
-                  </Tabs>
-
-                  {englishScoreResult && (
-                    <ScoreDisplay 
-                      scoreResult={englishScoreResult}
-                      systemTranslation={translations.english}
-                      targetLanguage="english"
-                    />
-                  )}
-                  <div className="mb-4">
-                    <h3 className="text-lg font-medium mb-2">Select Exercise (Hindi):</h3>
-                    <div className="grid gap-2">
-                      <Button 
-                        variant="outline" 
-                        className="justify-start text-left w-full" 
-                        onClick={() => setTranslations({
-                          ...translations,
-                          hindi: "मैं आज बहुत खुश हूँ।",
-                          english: "I am very happy today."
-                        })}
-                      >
-                        <span className="truncate">Exercise 1: मैं आज बहुत खुश हूँ।</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="justify-start text-left w-full" 
-                        onClick={() => setTranslations({
-                          ...translations,
-                          hindi: "मेरा नाम रोहन है और मैं भारत से हूँ।",
-                          english: "My name is Rohan and I am from India."
-                        })}
-                      >
-                        <span className="truncate">Exercise 2: मेरा नाम रोहन है और मैं भारत से हूँ।</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="justify-start text-left w-full" 
-                        onClick={() => setTranslations({
-                          ...translations,
-                          hindi: "क्या आप हिंदी बोल सकते हैं?",
-                          english: "Can you speak Hindi?"
-                        })}
-                      >
-                        <span className="truncate">Exercise 3: क्या आप हिंदी बोल सकते हैं?</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="justify-start text-left w-full" 
-                        onClick={() => setTranslations({
-                          ...translations,
-                          hindi: "भारत में बहुत सारे त्योहार मनाए जाते हैं।",
-                          english: "Many festivals are celebrated in India."
-                        })}
-                      >
-                        <span className="truncate">Exercise 4: भारत में बहुत सारे त्योहार मनाए जाते हैं।</span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-          <LessonBrowser /> {/* Added Lesson Browser component here */}
-        </div>
+    <div className="container py-8 max-w-4xl">
+      <h1 className="text-3xl font-bold text-center mb-2">Indian Language Translator</h1>
+      <p className="text-center text-slate-600 mb-6">Translate between Indian languages and practice your translations</p>
+      
+      <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200 mb-6">
+        <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
+        <ol className="list-decimal list-inside space-y-2 text-sm">
+          <li><span className="font-medium">Select Input Language:</span> Choose the source language you want to translate from.</li>
+          <li><span className="font-medium">Choose Input Method:</span> Select voice input or text input.</li>
+          <li><span className="font-medium">Select Target Languages:</span> Choose which languages you want to translate to.</li>
+          <li><span className="font-medium">Translation Practice:</span> Enter your translation to get feedback.</li>
+        </ol>
       </div>
+      
+      {/* Step 1: Select Input Language */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Step 1: Select Input Language</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select onValueChange={handleInputLanguageChange} value={selectedInputLanguage}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select input language" />
+            </SelectTrigger>
+            <SelectContent>
+              {allLanguages.map(lang => (
+                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+      
+      {/* Step 2: Select Input Method (only if input language is selected) */}
+      {selectedInputLanguage && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Step 2: Choose Input Method</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={inputMethod} onValueChange={setInputMethod}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="voice">Voice Input</TabsTrigger>
+                <TabsTrigger value="text">Text Input</TabsTrigger>
+              </TabsList>
+              <div className="mt-2 text-center">
+                <a href="https://www.google.com/inputtools/try/" target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">
+                  Need help typing in Indian languages? Try Google Input Tools
+                </a>
+              </div>
+
+              {inputMethod === "voice" && (
+                <TabsContent value="voice">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Record Voice in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : "malayalam"]}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <VoiceRecorder
+                        sourceLanguage={selectedInputLanguage}
+                        onTranscriptReceived={(transcript) => {
+                          setTranslations({
+                            sourceText: transcript,
+                            sourceLanguage: selectedInputLanguage,
+                          });
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
+
+              {inputMethod === "text" && (
+                <TabsContent value="text">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Enter Text in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : "malayalam"]}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TextUploader
+                        sourceLanguage={selectedInputLanguage}
+                        onTextReceived={(text) => {
+                          setTranslations({
+                            sourceText: text,
+                            sourceLanguage: selectedInputLanguage,
+                          });
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Step 3: Select Target Languages (only if input method is selected) */}
+      {selectedInputLanguage && inputMethod && translations.sourceText && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Step 3: Select Target Languages</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {availableTargetLanguages.map(lang => (
+                <Button
+                  key={lang.value}
+                  variant={targetLanguages.includes(lang.value) ? "default" : "outline"}
+                  onClick={() => toggleTargetLanguage(lang.value)}
+                  className="mb-2"
+                >
+                  {lang.label}
+                </Button>
+              ))}
+            </div>
+            
+            {targetLanguages.length > 0 && (
+              <div className="mt-6">
+                <TranslationDisplay
+                  translations={translations}
+                  selectedLanguages={targetLanguages}
+                  languageNames={languageNames}
+                />
+                
+                {translations.wordByWord && translations.wordByWord.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-2">Word-by-Word Translation</h3>
+                    <WordByWordTranslation translations={translations.wordByWord} />
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Step 4: Translation Practice */}
+      {selectedInputLanguage && inputMethod && translations.sourceText && targetLanguages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 4: Practice Your Translation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue={targetLanguages[0]}>
+              <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${targetLanguages.length}, minmax(0, 1fr))` }}>
+                {targetLanguages.map(lang => {
+                  const langName = allLanguages.find(l => l.value === lang)?.label || lang;
+                  return (
+                    <TabsTrigger key={lang} value={lang}>{langName}</TabsTrigger>
+                  );
+                })}
+              </TabsList>
+              
+              {targetLanguages.map(lang => {
+                const langName = lang === "en" ? "english" : 
+                               lang === "hi" ? "hindi" : 
+                               lang === "ta" ? "tamil" : 
+                               lang === "te" ? "telugu" : "malayalam";
+                               
+                const setScoreResult = lang === "en" ? setEnglishScoreResult :
+                                     lang === "hi" ? setHindiScoreResult :
+                                     lang === "ta" ? setTamilScoreResult :
+                                     lang === "te" ? setTeluguScoreResult : setMalayalamScoreResult;
+                                     
+                const scoreResult = lang === "en" ? englishScoreResult :
+                                  lang === "hi" ? hindiScoreResult :
+                                  lang === "ta" ? tamilScoreResult :
+                                  lang === "te" ? teluguScoreResult : malayalamScoreResult;
+                                  
+                return (
+                  <TabsContent key={lang} value={lang}>
+                    <AnswerInput 
+                      originalText={translations.sourceText}
+                      sourceLanguage={translations.sourceLanguage}
+                      targetLanguage={langName}
+                      onScoreResult={setScoreResult}
+                    />
+                    {scoreResult && (
+                      <ScoreDisplay 
+                        score={scoreResult.score} 
+                        feedback={scoreResult.feedback} 
+                      />
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
