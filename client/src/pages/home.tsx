@@ -25,6 +25,7 @@ interface Translation {
   telugu?: string;
   malayalam?: string;
   hindi?: string;
+  pitman?: string; // Added Pitman shorthand
   wordByWord?: Array<{
     sourceText: string;
     english: string;
@@ -76,18 +77,20 @@ export default function Home() {
   const [teluguScoreResult, setTeluguScoreResult] = useState<ScoreResult | null>(null);
   const [malayalamScoreResult, setMalayalamScoreResult] = useState<ScoreResult | null>(null);
   const [hindiScoreResult, setHindiScoreResult] = useState<ScoreResult | null>(null);
+  const [pitmanScoreResult, setPitmanScoreResult] = useState<ScoreResult | null>(null); // Added Pitman score result
 
   const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
   const [inputMethod, setInputMethod] = useState<string>("");
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
 
-  // All available languages - UPDATED TO INCLUDE HINDI
+  // All available languages - UPDATED TO INCLUDE HINDI and PITMAN
   const allLanguages = [
     { value: "en", label: "English" },
     { value: "hi", label: "Hindi" },
     { value: "ta", label: "Tamil" },
     { value: "te", label: "Telugu" },
-    { value: "ml", label: "Malayalam" }
+    { value: "ml", label: "Malayalam" },
+    { value: "pi", label: "Pitman Shorthand" } // Added Pitman shorthand
   ];
 
   // Filter out the selected input language from target language options
@@ -110,12 +113,14 @@ export default function Home() {
                 selectedInputLanguage === "hi" ? "Hindi" :
                 selectedInputLanguage === "ta" ? "Tamil" :
                 selectedInputLanguage === "te" ? "Telugu" :
-                selectedInputLanguage === "ml" ? "Malayalam" : "Source",
+                selectedInputLanguage === "ml" ? "Malayalam" :
+                selectedInputLanguage === "pi" ? "Pitman Shorthand" : "Source", // Added Pitman
     english: "English",
     hindi: "Hindi",
     tamil: "Tamil",
     telugu: "Telugu",
-    malayalam: "Malayalam"
+    malayalam: "Malayalam",
+    pitman: "Pitman Shorthand" // Added Pitman
   };
 
   // Reset states when input language changes
@@ -132,6 +137,7 @@ export default function Home() {
     setTeluguScoreResult(null);
     setMalayalamScoreResult(null);
     setHindiScoreResult(null);
+    setPitmanScoreResult(null); // Added Pitman
   };
 
   return (
@@ -192,7 +198,7 @@ export default function Home() {
                 <TabsContent value="voice">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Record Voice in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : "malayalam"]}</CardTitle>
+                      <CardTitle>Record Voice in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : selectedInputLanguage === "ml" ? "malayalam" : "pitman"]}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <VoiceRecorder
@@ -204,6 +210,7 @@ export default function Home() {
                             selectedInputLanguage === "ta" ? translations.tamil :
                             selectedInputLanguage === "te" ? translations.telugu :
                             selectedInputLanguage === "ml" ? translations.malayalam :
+                            selectedInputLanguage === "pi" ? translations.pitman : // Added Pitman
                             translations.english;
 
                           setTranslations({
@@ -212,6 +219,7 @@ export default function Home() {
                             tamil: translations.tamil,
                             telugu: translations.telugu,
                             malayalam: translations.malayalam,
+                            pitman: translations.pitman, // Added Pitman
                             sourceLanguage: selectedInputLanguage,
                           });
                         }}
@@ -225,7 +233,7 @@ export default function Home() {
                 <TabsContent value="text">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Enter Text in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : "malayalam"]}</CardTitle>
+                      <CardTitle>Enter Text in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : selectedInputLanguage === "ml" ? "malayalam" : "pitman"]}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <TextUploader
@@ -275,7 +283,8 @@ export default function Home() {
                     lang === "hi" ? "hindi" : 
                     lang === "ta" ? "tamil" : 
                     lang === "te" ? "telugu" : 
-                    lang === "ml" ? "malayalam" : ""
+                    lang === "ml" ? "malayalam" :
+                    lang === "pi" ? "pitman" : "" // Added Pitman
                   ).filter(Boolean)}
                   languageNames={languageNames}
                 />
@@ -287,7 +296,8 @@ export default function Home() {
                     lang === "hi" ? "hindi" : 
                     lang === "ta" ? "tamil" : 
                     lang === "te" ? "telugu" : 
-                    lang === "ml" ? "malayalam" : ""
+                    lang === "ml" ? "malayalam" :
+                    lang === "pi" ? "pitman" : "" // Added Pitman
                   ).join(', ')}</p>
                   <p>Available translations: {Object.keys(translations).join(', ')}</p>
                   <p>Translation contents:</p>
@@ -297,6 +307,7 @@ export default function Home() {
                     <li>Tamil: {translations.tamil?.substring(0, 30) || 'Not available'}</li>
                     <li>Telugu: {translations.telugu?.substring(0, 30) || 'Not available'}</li>
                     <li>Malayalam: {translations.malayalam?.substring(0, 30) || 'Not available'}</li>
+                    <li>Pitman: {translations.pitman?.substring(0, 30) || 'Not available'}</li> {/* Added Pitman */}
                   </ul>
                 </div>
 
@@ -309,7 +320,8 @@ export default function Home() {
                         targetLanguages.includes("ta") ? "tamil" :
                         targetLanguages.includes("te") ? "telugu" :
                         targetLanguages.includes("ml") ? "malayalam" :
-                        targetLanguages.includes("hi") ? "hindi" : "english"
+                        targetLanguages.includes("hi") ? "hindi" :
+                        targetLanguages.includes("pi") ? "pitman" : "english" // Added Pitman
                       } 
                     />
                   </div>
@@ -349,17 +361,20 @@ export default function Home() {
                 const langName = lang === "en" ? "english" : 
                                lang === "hi" ? "hindi" : 
                                lang === "ta" ? "tamil" : 
-                               lang === "te" ? "telugu" : "malayalam";
+                               lang === "te" ? "telugu" : 
+                               lang === "ml" ? "malayalam" : "pitman"; // Added Pitman
 
                 const setScoreResult = lang === "en" ? setEnglishScoreResult :
                                      lang === "hi" ? setHindiScoreResult :
                                      lang === "ta" ? setTamilScoreResult :
-                                     lang === "te" ? setTeluguScoreResult : setMalayalamScoreResult;
+                                     lang === "te" ? setTeluguScoreResult :
+                                     lang === "ml" ? setMalayalamScoreResult : setPitmanScoreResult; // Added Pitman
 
                 const scoreResult = lang === "en" ? englishScoreResult :
                                   lang === "hi" ? hindiScoreResult :
                                   lang === "ta" ? tamilScoreResult :
-                                  lang === "te" ? teluguScoreResult : malayalamScoreResult;
+                                  lang === "te" ? teluguScoreResult :
+                                  lang === "ml" ? malayalamScoreResult : pitmanScoreResult; // Added Pitman
 
                 return (
                   <TabsContent key={lang} value={lang}>

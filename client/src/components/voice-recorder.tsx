@@ -15,6 +15,7 @@ interface VoiceRecorderProps {
     tamil: string;
     telugu: string;
     malayalam: string;
+    pitman: string; // Added Pitman
   }) => void;
 }
 
@@ -30,6 +31,20 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
   const [currentTranscript, setCurrentTranscript] = useState<string>('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const { toast } = useToast();
+  const [showRecordingEnded, setShowRecordingEnded] = useState(false); // Added state for popup
+
+  // Auto-hide recording ended popup after 3 seconds
+  useEffect(() => {
+    let timer: number;
+    if (showRecordingEnded) {
+      timer = window.setTimeout(() => {
+        setShowRecordingEnded(false);
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showRecordingEnded]);
 
   // Language options
   const languageOptions = [
@@ -37,7 +52,8 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
     { value: "ta", label: "Tamil" },
     { value: "te", label: "Telugu" },
     { value: "ml", label: "Malayalam" },
-    { value: "en", label: "English" }
+    { value: "en", label: "English" },
+    { value: "pitman", label: "Pitman Shorthand" } // Added Pitman
   ];
 
   useEffect(() => {
@@ -99,6 +115,10 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         break;
       case 'en':
         recognitionInstance.lang = 'en-US'; // English
+        break;
+      case 'pitman':
+        //Handle Pitman -  This requires a specialized speech recognition engine for Pitman shorthand.  This is beyond the scope of this example.
+        recognitionInstance.lang = 'en-US'; // Placeholder - Needs a Pitman-specific language code
         break;
       default:
         recognitionInstance.lang = 'hi-IN'; // Default to Hindi
@@ -166,6 +186,7 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         }
       } else {
         setIsRecording(false);
+        setShowRecordingEnded(true); // Show popup on recording end
         toast({
           title: "Recording Ended",
           description: "Processing your speech...",
@@ -189,10 +210,10 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
     setIsTranslating(true);
     try {
       // Get all target languages except the source language
-      const targetLangs = ['en', 'ta', 'te', 'ml', 'hi'].filter(lang => lang !== sourceLanguage);
-      
+      const targetLangs = ['en', 'ta', 'te', 'ml', 'hi', 'pitman'].filter(lang => lang !== sourceLanguage);
+
       console.log(`Requesting translation from ${sourceLanguage} to: ${targetLangs.join(', ')}`);
-      
+
       const response = await fetch('/api/translate/text', {
         method: 'POST',
         headers: {
@@ -206,7 +227,7 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
       });
 
       const data = await response.json();
-      
+
       // Log what we received - for debugging
       console.log("Translation data:", {
         sourceLanguage,
@@ -216,7 +237,8 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
           english: data.english || '',
           tamil: data.tamil || '',
           telugu: data.telugu || '',
-          malayalam: data.malayalam || ''
+          malayalam: data.malayalam || '',
+          pitman: data.pitman || '' // Added Pitman
         }
       });
 
@@ -231,15 +253,16 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         tamil: sourceLanguage === 'ta' ? text : data.tamil || '',
         telugu: sourceLanguage === 'te' ? text : data.telugu || '',
         malayalam: sourceLanguage === 'ml' ? text : data.malayalam || '',
+        pitman: sourceLanguage === 'pitman' ? text : data.pitman || '' // Added Pitman
       };
-      
+
       // Log translations for debugging
       console.log("Translation data:", { 
         sourceLanguage, 
         recognizedText: text,
         translations
       });
-      
+
       onTranslationComplete(translations);
     } catch (error) {
       toast({
@@ -308,7 +331,7 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
             : "Click to start recording"}
         </p>
       </div>
-      
+
       <div className="mt-4">
         <p>Recognized Text:</p>
         <pre>{currentTranscript}</pre>

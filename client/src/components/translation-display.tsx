@@ -14,6 +14,7 @@ interface TranslationDisplayProps {
     telugu?: string;
     malayalam?: string;
     hindi?: string;
+    pitman?: string;
   };
   selectedLanguages?: string[];
   languageNames?: Record<string, string>;

@@ -382,7 +382,8 @@ export async function registerRoutes(app: Express) {
         "english": "en",
         "tamil": "ta",
         "telugu": "te",
-        "malayalam": "ml"
+        "malayalam": "ml",
+        "pitman": "ps"
       }[targetLanguage];
 
       if (!targetLangCode) {
@@ -446,6 +447,7 @@ export async function registerRoutes(app: Express) {
         if (lang === "ta") translations.tamil = translationResults[index];
         if (lang === "te") translations.telugu = translationResults[index];
         if (lang === "ml") translations.malayalam = translationResults[index];
+        if (lang === "ps") translations.pitman = translationResults[index];
       });
 
       // Make sure we include a field for the source language
@@ -459,6 +461,8 @@ export async function registerRoutes(app: Express) {
         translations.telugu = text;
       } else if (sourceLanguage === 'ml' && !translations.malayalam) {
         translations.malayalam = text;
+      } else if (sourceLanguage === 'ps' && !translations.pitman) {
+        translations.pitman = text;
       }
 
       // Log the actual translations for debugging
@@ -475,7 +479,8 @@ export async function registerRoutes(app: Express) {
         english: translations.en || '',
         tamil: translations.ta || '',
         telugu: translations.te || '',
-        malayalam: translations.ml || ''
+        malayalam: translations.ml || '',
+        pitman: translations.ps || ''
       };
 
       const validatedData = insertTranslationSchema.parse(storageData);
@@ -498,7 +503,8 @@ export async function registerRoutes(app: Express) {
         'ta': /[\u0B80-\u0BFF]/,  // Tamil
         'te': /[\u0C00-\u0C7F]/,  // Telugu
         'ml': /[\u0D00-\u0D7F]/,  // Malayalam
-        'en': /[a-zA-Z]/          // English
+        'en': /[a-zA-Z]/,          // English
+        'ps': /[\u0900-\u097F]/ // Pitman (assuming similar script for now)
       };
 
       // Validate that the text contains characters in the source language
@@ -510,7 +516,7 @@ export async function registerRoutes(app: Express) {
       }
 
       // Define all supported languages
-      const allSupportedLanguages = ['en', 'hi', 'ta', 'te', 'ml'];
+      const allSupportedLanguages = ['en', 'hi', 'ta', 'te', 'ml', 'ps'];
 
       // Ensure all languages except source language are included in target languages
       const uniqueTargetLanguages = allSupportedLanguages.filter(lang => lang !== sourceLanguage);
@@ -553,6 +559,7 @@ export async function registerRoutes(app: Express) {
           if (lang === 'ta') translations.tamil = translationResults[index];
           if (lang === 'te') translations.telugu = translationResults[index];
           if (lang === 'ml') translations.malayalam = translationResults[index];
+          if (lang === 'ps') translations.pitman = translationResults[index];
         }
       });
 
@@ -585,7 +592,8 @@ export async function registerRoutes(app: Express) {
         english: translations.en || '',
         tamil: translations.ta || '',
         telugu: translations.te || '',
-        malayalam: translations.ml || ''
+        malayalam: translations.ml || '',
+        pitman: translations.ps || ''
       };
 
       const validatedData = insertTranslationSchema.parse(storageData);

@@ -10,6 +10,7 @@ export const translations = pgTable("translations", {
   tamil: text("tamil"),
   telugu: text("telugu"),
   malayalam: text("malayalam"),
+  pitman: text("pitman"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
