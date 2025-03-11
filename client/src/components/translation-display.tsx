@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Copy, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; //Removed import
 import { TranslationCard } from "./translation-card";
 
 interface TranslationDisplayProps {
@@ -43,20 +43,7 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
     URL.revokeObjectURL(url);
   };
 
-  const handleLanguageChange = (value: string) => {
-    if (value === "english") {
-      setSelectedLanguages([]);
-    } else if (selectedLanguages.includes(value)) {
-      // Remove the language if already selected
-      setSelectedLanguages(selectedLanguages.filter(lang => lang !== value));
-    } else {
-      // Add the language to selected languages
-      setSelectedLanguages([...selectedLanguages, value]);
-    }
-    // Log the selected language to help with debugging
-    console.log("Selected languages:", selectedLanguages);
-    console.log("Available translations:", translations);
-  };
+  // handleLanguageChange function removed
 
   // Language display names mapping (using props if available)
   const languageNames: Record<string, string> = propLanguageNames || {
@@ -85,18 +72,7 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Translations</h3>
-        <Select onValueChange={handleLanguageChange} defaultValue="english">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select language" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="english">English Only</SelectItem>
-            <SelectItem value="tamil">Tamil</SelectItem>
-            <SelectItem value="telugu">Telugu</SelectItem>
-            <SelectItem value="malayalam">Malayalam</SelectItem>
-            <SelectItem value="hindi">Hindi</SelectItem> {/* Added Hindi option */}
-          </SelectContent>
-        </Select>
+        {/* Select component removed */}
       </div>
 
       <TranslationCard
