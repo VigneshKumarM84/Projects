@@ -87,6 +87,7 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
             <SelectItem value="tamil">Tamil</SelectItem>
             <SelectItem value="telugu">Telugu</SelectItem>
             <SelectItem value="malayalam">Malayalam</SelectItem>
+            <SelectItem value="hindi">Hindi</SelectItem> {/* Added Hindi option */}
           </SelectContent>
         </Select>
       </div>
@@ -131,6 +132,14 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
           onDownload={(text, lang) => downloadText(text, lang)}
         />
       )}
+      {selectedLanguages.includes("hindi") && translations.hindi && (
+        <TranslationCard
+          title="Hindi"
+          content={translations.hindi}
+          onCopy={copyToClipboard}
+          onDownload={(text, lang) => downloadText(text, lang)}
+        />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <TranslationCard languageKey="sourceText" text={translations.sourceText} copyToClipboard={copyToClipboard} downloadText={downloadText} languageNames={languageNames}/>
@@ -143,6 +152,9 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
         )}
         {selectedLanguages.includes("malayalam") && (
           <TranslationCard languageKey="malayalam" text={translations.malayalam} copyToClipboard={copyToClipboard} downloadText={downloadText} languageNames={languageNames}/>
+        )}
+        {selectedLanguages.includes("hindi") && (
+          <TranslationCard languageKey="hindi" text={translations.hindi} copyToClipboard={copyToClipboard} downloadText={downloadText} languageNames={languageNames}/>
         )}
       </div>
     </div>

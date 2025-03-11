@@ -474,13 +474,11 @@ export async function registerRoutes(app: Express) {
         });
       }
 
-      // Ensure at least English is included in target languages
-      const languages = Array.isArray(targetLanguages) 
-        ? (targetLanguages.includes('en') ? targetLanguages : [...targetLanguages, 'en']) 
-        : ['en'];
-
-      // Make sure we don't translate to the same language as source
-      const uniqueTargetLanguages = languages.filter(lang => lang !== sourceLanguage);
+      // Define all supported languages
+      const allSupportedLanguages = ['en', 'hi', 'ta', 'te', 'ml'];
+      
+      // Ensure all languages except source language are included in target languages
+      const uniqueTargetLanguages = allSupportedLanguages.filter(lang => lang !== sourceLanguage);
       
       // Get full sentence translations first for coherence
       const translationPromises = uniqueTargetLanguages.map(lang => 

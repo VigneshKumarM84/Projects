@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { VoiceRecorder } from "@/components/voice-recorder";
 import { TextUploader } from "@/components/text-uploader";
@@ -44,7 +43,7 @@ interface Translation {
 function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) {
   let bgColor = "bg-red-100";
   let textColor = "text-red-800";
-  
+
   if (score >= 85) {
     bgColor = "bg-green-100";
     textColor = "text-green-800";
@@ -55,7 +54,7 @@ function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) 
     bgColor = "bg-orange-100";
     textColor = "text-orange-800";
   }
-  
+
   return (
     <div className={`p-4 rounded-md ${bgColor} ${textColor} mt-4`}>
       <div className="flex items-center justify-between">
@@ -71,18 +70,18 @@ export default function Home() {
     sourceText: "",
     sourceLanguage: "",
   });
-  
+
   const [englishScoreResult, setEnglishScoreResult] = useState<ScoreResult | null>(null);
   const [tamilScoreResult, setTamilScoreResult] = useState<ScoreResult | null>(null);
   const [teluguScoreResult, setTeluguScoreResult] = useState<ScoreResult | null>(null);
   const [malayalamScoreResult, setMalayalamScoreResult] = useState<ScoreResult | null>(null);
   const [hindiScoreResult, setHindiScoreResult] = useState<ScoreResult | null>(null);
-  
+
   const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
   const [inputMethod, setInputMethod] = useState<string>("");
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
-  
-  // All available languages
+
+  // All available languages - UPDATED TO INCLUDE HINDI
   const allLanguages = [
     { value: "en", label: "English" },
     { value: "hi", label: "Hindi" },
@@ -90,12 +89,12 @@ export default function Home() {
     { value: "te", label: "Telugu" },
     { value: "ml", label: "Malayalam" }
   ];
-  
+
   // Filter out the selected input language from target language options
   const availableTargetLanguages = allLanguages.filter(lang => 
     lang.value !== selectedInputLanguage
   );
-  
+
   // Handle target language selection/deselection
   const toggleTargetLanguage = (langCode: string) => {
     if (targetLanguages.includes(langCode)) {
@@ -104,7 +103,7 @@ export default function Home() {
       setTargetLanguages([...targetLanguages, langCode]);
     }
   };
-  
+
   // Map language codes to language names
   const languageNames: Record<string, string> = {
     sourceText: selectedInputLanguage === "en" ? "English" : 
@@ -118,7 +117,7 @@ export default function Home() {
     telugu: "Telugu",
     malayalam: "Malayalam"
   };
-  
+
   // Reset states when input language changes
   const handleInputLanguageChange = (lang: string) => {
     setSelectedInputLanguage(lang);
@@ -134,12 +133,12 @@ export default function Home() {
     setMalayalamScoreResult(null);
     setHindiScoreResult(null);
   };
-  
+
   return (
     <div className="container py-8 max-w-4xl">
       <h1 className="text-3xl font-bold text-center mb-2">Indian Language Translator</h1>
       <p className="text-center text-slate-600 mb-6">Translate between Indian languages and practice your translations</p>
-      
+
       <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200 mb-6">
         <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm">
@@ -149,7 +148,7 @@ export default function Home() {
           <li><span className="font-medium">Translation Practice:</span> Enter your translation to get feedback.</li>
         </ol>
       </div>
-      
+
       {/* Step 1: Select Input Language */}
       <Card className="mb-6">
         <CardHeader>
@@ -168,7 +167,7 @@ export default function Home() {
           </Select>
         </CardContent>
       </Card>
-      
+
       {/* Step 2: Select Input Method (only if input language is selected) */}
       {selectedInputLanguage && (
         <Card className="mb-6">
@@ -204,7 +203,7 @@ export default function Home() {
                             selectedInputLanguage === "te" ? translations.telugu :
                             selectedInputLanguage === "ml" ? translations.malayalam :
                             translations.english;
-                            
+
                           setTranslations({
                             sourceText,
                             english: translations.english,
@@ -244,7 +243,7 @@ export default function Home() {
           </CardContent>
         </Card>
       )}
-      
+
       {/* Step 3: Select Target Languages (only if input method is selected) */}
       {selectedInputLanguage && inputMethod && translations.sourceText && (
         <Card className="mb-6">
@@ -264,7 +263,7 @@ export default function Home() {
                 </Button>
               ))}
             </div>
-            
+
             {targetLanguages.length > 0 && (
               <div className="mt-6">
                 <TranslationDisplay
@@ -272,7 +271,7 @@ export default function Home() {
                   selectedLanguages={targetLanguages}
                   languageNames={languageNames}
                 />
-                
+
                 {translations.wordByWord && translations.wordByWord.length > 0 && targetLanguages.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-2">Word-by-Word Translation</h3>
@@ -292,7 +291,7 @@ export default function Home() {
           </CardContent>
         </Card>
       )}
-      
+
       {/* Step 4: Translation Practice */}
       {selectedInputLanguage && inputMethod && translations.sourceText && targetLanguages.length > 0 && (
         <Card>
@@ -309,23 +308,23 @@ export default function Home() {
                   );
                 })}
               </TabsList>
-              
+
               {targetLanguages.map(lang => {
                 const langName = lang === "en" ? "english" : 
                                lang === "hi" ? "hindi" : 
                                lang === "ta" ? "tamil" : 
                                lang === "te" ? "telugu" : "malayalam";
-                               
+
                 const setScoreResult = lang === "en" ? setEnglishScoreResult :
                                      lang === "hi" ? setHindiScoreResult :
                                      lang === "ta" ? setTamilScoreResult :
                                      lang === "te" ? setTeluguScoreResult : setMalayalamScoreResult;
-                                     
+
                 const scoreResult = lang === "en" ? englishScoreResult :
                                   lang === "hi" ? hindiScoreResult :
                                   lang === "ta" ? tamilScoreResult :
                                   lang === "te" ? teluguScoreResult : malayalamScoreResult;
-                                  
+
                 return (
                   <TabsContent key={lang} value={lang}>
                     <AnswerInput 
