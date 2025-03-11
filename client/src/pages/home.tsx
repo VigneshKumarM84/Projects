@@ -163,6 +163,11 @@ export default function Home() {
             <TabsTrigger value="voice">Voice Input</TabsTrigger>
             <TabsTrigger value="text">Text Input</TabsTrigger>
           </TabsList>
+          <div className="mt-2 text-center">
+            <a href="https://www.google.com/inputtools/try/" target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">
+              Need help typing in Indian languages? Try Google Input Tools
+            </a>
+          </div>
 
           <TabsContent value="voice">
             <Card>
