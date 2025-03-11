@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Mic, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Label } from '@headlessui/react'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@radix-ui/react-select'
+import { Label } from "@radix-ui/react-label"
 
 interface VoiceRecorderProps {
   onTranslationComplete: (translations: {
