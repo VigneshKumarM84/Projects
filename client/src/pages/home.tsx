@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { LessonBrowser } from "@/components/lesson-browser";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnswerInput } from "@/components/answer-input";
+import { useRef } from "react";
 
 interface ScoreResult {
   userAnswer: string;
@@ -65,7 +66,25 @@ function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) 
   );
 }
 
-export default function Home() {
+// Helper function to get language-specific keyboard characters
+const getLanguageKeyboard = (lang: string): string[] => {
+  switch (lang) {
+    case 'hi':
+      return ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ', 'क', 'ख', 'ग', 'घ', 'च', 'छ', 'ज', 'झ', 'ट', 'ठ', 'ड', 'ढ', 'त', 'थ', 'द', 'ध', 'न', 'प', 'फ', 'ब', 'भ', 'म', 'य', 'र', 'ल', 'व', 'श', 'ष', 'स', 'ह', 'ं', 'ः', '्'];
+    case 'ta':
+      return ['அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ', 'க', 'ங', 'ச', 'ஞ', 'ட', 'ண', 'த', 'ந', 'ப', 'ம', 'ய', 'ர', 'ல', 'வ', 'ழ', 'ள', 'ற', 'ன', '்', 'ா', 'ி', 'ீ', 'ு', 'ூ', 'ெ', 'ே', 'ை', 'ொ', 'ோ', 'ௌ'];
+    case 'te':
+      return ['అ', 'ఆ', 'ఇ', 'ఈ', 'ఉ', 'ఊ', 'ఋ', 'ఎ', 'ఏ', 'ఐ', 'ఒ', 'ఓ', 'ఔ', 'క', 'ఖ', 'గ', 'ఘ', 'చ', 'ఛ', 'జ', 'ఝ', 'ట', 'ఠ', 'డ', 'ఢ', 'త', 'థ', 'ద', 'ధ', 'న', 'ప', 'ఫ', 'బ', 'భ', 'మ', 'య', 'ర', 'ల', 'వ', 'శ', 'ష', 'స', 'హ', '్', 'ా', 'ి', 'ీ', 'ు', 'ూ', 'ె', 'ే', 'ై', 'ొ', 'ో', 'ౌ'];
+    case 'ml':
+      return ['അ', 'ആ', 'ഇ', 'ഈ', 'ഉ', 'ഊ', 'ഋ', 'എ', 'ഏ', 'ഐ', 'ഒ', 'ഓ', 'ഔ', 'ക', 'ഖ', 'ഗ', 'ഘ', 'ങ', 'ച', 'ഛ', 'ജ', 'ഝ', 'ഞ', 'ട', 'ഠ', 'ഡ', 'ഢ', 'ണ', 'ത', 'ഥ', 'ദ', 'ധ', 'ന', 'പ', 'ഫ', 'ബ', 'ഭ', 'മ', 'യ', 'ര', 'ല', 'വ', 'ശ', 'ഷ', 'സ', 'ഹ', '്', 'ാ', 'ി', 'ീ', 'ു', 'ൂ', 'ൃ', 'െ', 'േ', 'ൈ', 'ൊ', 'ോ', 'ൌ'];
+    default:
+      return [];
+  }
+};
+
+export function HomePage() {
+  const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
+  const [inputMethod, setInputMethod] = useState<"voice" | "text">("voice");
   const [translations, setTranslations] = useState<Translation>({
     sourceText: "",
     sourceLanguage: "",
@@ -77,8 +96,6 @@ export default function Home() {
   const [malayalamScoreResult, setMalayalamScoreResult] = useState<ScoreResult | null>(null);
   const [hindiScoreResult, setHindiScoreResult] = useState<ScoreResult | null>(null);
 
-  const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
-  const [inputMethod, setInputMethod] = useState<string>("");
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
 
   // All available languages - UPDATED TO INCLUDE HINDI
@@ -360,9 +377,27 @@ export default function Home() {
                                   lang === "hi" ? hindiScoreResult :
                                   lang === "ta" ? tamilScoreResult :
                                   lang === "te" ? teluguScoreResult : malayalamScoreResult;
+                const keyboard = getLanguageKeyboard(lang);
 
                 return (
                   <TabsContent key={lang} value={lang}>
+                    <div className="mb-4">
+                      {keyboard.length > 0 && (
+                        <div>
+                          <p className="font-medium mb-2">Keyboard:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {keyboard.map((char) => (
+                              <Button key={char} onClick={() => {
+                                //This is a placeholder, you need to integrate with the input field here.
+                                console.log("Clicked:", char);
+                              }}>
+                                {char}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <AnswerInput 
                       originalText={translations.sourceText}
                       sourceLanguage={translations.sourceLanguage}
