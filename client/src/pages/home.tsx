@@ -67,6 +67,12 @@ function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) 
 }
 
 // Helper function to get language-specific keyboard characters
+export default function HomePage() {
+  // Your home page component implementation
+  // This should contain all the content that's currently in this file
+  // ...
+}
+
 const getLanguageKeyboard = (lang: string): string[] => {
   switch (lang) {
     case 'hi':
