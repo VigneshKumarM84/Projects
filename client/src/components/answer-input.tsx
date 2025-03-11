@@ -1,97 +1,201 @@
-import { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
-interface AnswerInputProps {
-  originalText: string;
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Translation } from '@/pages/home';
+import axios from 'axios';
+
+type AnswerInputProps = {
   sourceLanguage: string;
-  targetLanguage: string;
-  onScoreResult?: (result: { score: number; feedback: string }) => void;
-}
+  targetLanguages: string[];
+  onTranslationReceived: (translation: Translation) => void;
+};
 
-export function AnswerInput({ originalText, sourceLanguage, targetLanguage, onScoreResult }: AnswerInputProps) {
-  const [answer, setAnswer] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null); // Added state for selected language
-  const { toast } = useToast();
+export default function AnswerInput({ sourceLanguage, targetLanguages, onTranslationReceived }: AnswerInputProps) {
+  const [text, setText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+
+  // Character sets for each language
+  const getLanguageKeyboard = (lang: string): string[] => {
+    switch (lang) {
+      case 'hi':
+        return ['अ', 'आ', 'इ', 'ई', 'उ', 'ऊ', 'ए', 'ऐ', 'ओ', 'औ', 'क', 'ख', 'ग', 'घ', 'च', 'छ', 'ज', 'झ', 'ट', 'ठ', 'ड', 'ढ', 'त', 'थ', 'द', 'ध', 'न', 'प', 'फ', 'ब', 'भ', 'म', 'य', 'र', 'ल', 'व', 'श', 'ष', 'स', 'ह', 'ं', 'ः', '्'];
+      case 'ta':
+        return ['அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ', 'க', 'ங', 'ச', 'ஞ', 'ட', 'ண', 'த', 'ந', 'ப', 'ம', 'ய', 'ர', 'ல', 'வ', 'ழ', 'ள', 'ற', 'ன', '்', 'ா', 'ி', 'ீ', 'ு', 'ூ', 'ெ', 'ே', 'ை', 'ொ', 'ோ', 'ௌ'];
+      case 'te':
+        return ['అ', 'ఆ', 'ఇ', 'ఈ', 'ఉ', 'ఊ', 'ఋ', 'ఎ', 'ఏ', 'ఐ', 'ఒ', 'ఓ', 'ఔ', 'క', 'ఖ', 'గ', 'ఘ', 'చ', 'ఛ', 'జ', 'ఝ', 'ట', 'ఠ', 'డ', 'ఢ', 'త', 'థ', 'ద', 'ధ', 'న', 'ప', 'ఫ', 'బ', 'భ', 'మ', 'య', 'ర', 'ల', 'వ', 'శ', 'ష', 'స', 'హ', '్', 'ా', 'ి', 'ీ', 'ు', 'ూ', 'ె', 'ే', 'ై', 'ొ', 'ో', 'ౌ'];
+      case 'ml':
+        return ['അ', 'ആ', 'ഇ', 'ഈ', 'ഉ', 'ഊ', 'ഋ', 'എ', 'ഏ', 'ഐ', 'ഒ', 'ഓ', 'ഔ', 'ക', 'ഖ', 'ഗ', 'ഘ', 'ങ', 'ച', 'ഛ', 'ജ', 'ഝ', 'ഞ', 'ട', 'ഠ', 'ഡ', 'ഢ', 'ണ', 'ത', 'ഥ', 'ദ', 'ധ', 'ന', 'പ', 'ഫ', 'ബ', 'ഭ', 'മ', 'യ', 'ര', 'ല', 'വ', 'ശ', 'ഷ', 'സ', 'ഹ', '്', 'ാ', 'ി', 'ീ', 'ു', 'ൂ', 'ൃ', 'െ', 'േ', 'ൈ', 'ൊ', 'ോ', 'ൌ'];
+      default:
+        return [];
+    }
+  };
+
+  const insertCharacter = (char: string) => {
+    setText(prev => prev + char);
+  };
 
   const handleSubmit = async () => {
-    if (!answer.trim()) {
-      toast({
-        title: "No answer provided",
-        description: "Please enter your translation before submitting.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!text.trim() || !sourceLanguage || targetLanguages.length === 0) return;
 
-    setIsSubmitting(true);
-
+    setIsLoading(true);
     try {
-      const response = await apiRequest("POST", "/api/score-translation", {
-        originalText,
-        userAnswer: answer,
-        targetLanguage,
+      const response = await axios.post('/api/translate', {
+        text,
         sourceLanguage,
+        targetLanguages
       });
 
-      const result = await response.json();
-      onScoreResult({
-        score: result.score,
-        feedback: result.feedback,
-      });
-
-      toast({
-        title: "Answer submitted",
-        description: "Your translation has been scored.",
-      });
+      console.log("Translation data:", response.data);
+      onTranslationReceived(response.data);
     } catch (error) {
-      toast({
-        title: "Submission failed",
-        description: "An error occurred while scoring your translation.",
-        variant: "destructive",
-      });
+      console.error('Translation error:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleLanguageClick = (lang: string) => {
-    setSelectedLanguage(lang);
-    //  In a real application, you'd use a more robust method to switch keyboard layout here.
-    // This is a placeholder and won't reliably switch keyboard layouts across different operating systems or browsers.
-    console.log(`Switching to ${lang} keyboard (placeholder implementation)`);
-
+  // Function to enable direct typing in specified language
+  const enableLanguageTyping = (language: string) => {
+    console.log(`Switching to ${language} keyboard (placeholder implementation)`);
+    // This would ideally trigger platform-specific keyboard layout changing
+    // Since we can't control the system keyboard directly from the browser,
+    // we'll use our virtual keyboard as an alternative
+    setShowKeyboard(true);
   };
 
+  const keyboards = {
+    en: () => <p className="text-sm text-gray-500">Standard English keyboard available on your device</p>,
+    hi: () => (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {getLanguageKeyboard('hi').map((char, index) => (
+          <Button 
+            key={index} 
+            variant="outline" 
+            className="h-8 px-2" 
+            onClick={() => insertCharacter(char)}
+          >
+            {char}
+          </Button>
+        ))}
+      </div>
+    ),
+    ta: () => (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {getLanguageKeyboard('ta').map((char, index) => (
+          <Button 
+            key={index} 
+            variant="outline" 
+            className="h-8 px-2" 
+            onClick={() => insertCharacter(char)}
+          >
+            {char}
+          </Button>
+        ))}
+      </div>
+    ),
+    te: () => (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {getLanguageKeyboard('te').map((char, index) => (
+          <Button 
+            key={index} 
+            variant="outline" 
+            className="h-8 px-2" 
+            onClick={() => insertCharacter(char)}
+          >
+            {char}
+          </Button>
+        ))}
+      </div>
+    ),
+    ml: () => (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {getLanguageKeyboard('ml').map((char, index) => (
+          <Button 
+            key={index} 
+            variant="outline" 
+            className="h-8 px-2" 
+            onClick={() => insertCharacter(char)}
+          >
+            {char}
+          </Button>
+        ))}
+      </div>
+    ),
+  };
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>Your {targetLanguage.charAt(0).toUpperCase() + targetLanguage.slice(1)} Translation</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Button onClick={() => handleLanguageClick('english')} variant={'ghost'}>English</Button>
-          <Button onClick={() => handleLanguageClick('hindi')} variant={'ghost'}>Hindi</Button>
-          <Button onClick={() => handleLanguageClick('tamil')} variant={'ghost'}>Tamil</Button>
-          <Button onClick={() => handleLanguageClick('telugu')} variant={'ghost'}>Telugu</Button>
-          <Button onClick={() => handleLanguageClick('malayalam')} variant={'ghost'}>Malayalam</Button>
-        </div>
-        <Textarea
-          placeholder={`Enter your ${targetLanguage} translation here...`}
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          className="min-h-[100px]"
-          // data-language={selectedLanguage} //This is not reliably switching keyboard.
+    <div className="space-y-4">
+      <div className="flex flex-col space-y-2">
+        <Input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={`Type in ${sourceLanguage === 'en' ? 'English' : 
+                        sourceLanguage === 'hi' ? 'Hindi' : 
+                        sourceLanguage === 'ta' ? 'Tamil' : 
+                        sourceLanguage === 'te' ? 'Telugu' : 'Malayalam'}`}
+          className="w-full"
         />
-        <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Submitting..." : "Submit for Scoring"}
-        </Button>
-      </CardContent>
-    </Card>
+        
+        <div className="flex flex-wrap gap-2 mt-2">
+          <Button 
+            onClick={() => enableLanguageTyping('en')}
+            variant="outline"
+            size="sm"
+          >
+            English Keyboard
+          </Button>
+          <Button 
+            onClick={() => enableLanguageTyping('hi')}
+            variant="outline"
+            size="sm"
+          >
+            Hindi Keyboard
+          </Button>
+          <Button 
+            onClick={() => enableLanguageTyping('ta')}
+            variant="outline"
+            size="sm"
+          >
+            Tamil Keyboard
+          </Button>
+          <Button 
+            onClick={() => enableLanguageTyping('te')}
+            variant="outline"
+            size="sm"
+          >
+            Telugu Keyboard
+          </Button>
+          <Button 
+            onClick={() => enableLanguageTyping('ml')}
+            variant="outline"
+            size="sm"
+          >
+            Malayalam Keyboard
+          </Button>
+        </div>
+      </div>
+      
+      {showKeyboard && sourceLanguage in keyboards && (
+        <div className="border p-2 rounded-md">
+          <div className="flex justify-between mb-2">
+            <p className="text-sm font-medium">Virtual Keyboard</p>
+            <Button size="sm" variant="ghost" onClick={() => setShowKeyboard(false)}>
+              Hide
+            </Button>
+          </div>
+          {keyboards[sourceLanguage as keyof typeof keyboards]()}
+        </div>
+      )}
+      
+      <Button 
+        onClick={handleSubmit} 
+        disabled={isLoading || !text.trim()} 
+        className="w-full"
+      >
+        {isLoading ? "Translating..." : "Translate"}
+      </Button>
+    </div>
   );
 }
