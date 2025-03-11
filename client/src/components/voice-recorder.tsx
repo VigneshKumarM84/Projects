@@ -80,7 +80,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
       return;
     }
     const recognitionInstance = new SpeechRecognitionAPI();
-    
+
     // Configure the recognition language based on selection
     switch(sourceLanguage) {
       case 'hi':

@@ -195,10 +195,13 @@ export default function Home() {
                     </CardHeader>
                     <CardContent>
                       <VoiceRecorder
-                        sourceLanguage={selectedInputLanguage}
-                        onTranscriptReceived={(transcript) => {
+                        onTranslationComplete={(translations) => {
                           setTranslations({
-                            sourceText: transcript,
+                            sourceText: translations.hindi,
+                            english: translations.english,
+                            tamil: translations.tamil,
+                            telugu: translations.telugu,
+                            malayalam: translations.malayalam,
                             sourceLanguage: selectedInputLanguage,
                           });
                         }}
