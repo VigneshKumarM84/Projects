@@ -8,6 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Label } from "@radix-ui/react-label"
 
 interface VoiceRecorderProps {
+  sourceLanguage?: string;
   onTranslationComplete: (translations: {
     hindi: string;
     english: string;
@@ -17,13 +18,13 @@ interface VoiceRecorderProps {
   }) => void;
 }
 
-export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
+export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTranslationComplete }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcription, setTranscription] = useState("");
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [sourceLanguage, setSourceLanguage] = useState("hi"); // Default to Hindi
+  const [sourceLanguage, setSourceLanguage] = useState(propSourceLanguage);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [currentTranscript, setCurrentTranscript] = useState<string>('');
@@ -35,7 +36,8 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
     { value: "hi", label: "Hindi" },
     { value: "ta", label: "Tamil" },
     { value: "te", label: "Telugu" },
-    { value: "ml", label: "Malayalam" }
+    { value: "ml", label: "Malayalam" },
+    { value: "en", label: "English" }
   ];
 
   useEffect(() => {
@@ -194,7 +196,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
         body: JSON.stringify({ 
           text,
           sourceLanguage,
-          targetLanguages: ['en', 'ta', 'te', 'ml']  
+          targetLanguages: ['en', 'ta', 'te', 'ml', 'hi'].filter(lang => lang !== sourceLanguage)
         }),
       });
 
@@ -204,7 +206,16 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
         throw new Error(data.message || 'Failed to translate');
       }
 
-      onTranslationComplete(data);
+      // Create a translations object with the recognized source text in the correct language field
+      const translations = {
+        hindi: sourceLanguage === 'hi' ? text : data.hindi || '',
+        english: sourceLanguage === 'en' ? text : data.english || '',
+        tamil: sourceLanguage === 'ta' ? text : data.tamil || '',
+        telugu: sourceLanguage === 'te' ? text : data.telugu || '',
+        malayalam: sourceLanguage === 'ml' ? text : data.malayalam || '',
+      };
+      
+      onTranslationComplete(translations);
     } catch (error) {
       toast({
         title: "Translation Error",

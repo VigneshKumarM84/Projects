@@ -195,9 +195,18 @@ export default function Home() {
                     </CardHeader>
                     <CardContent>
                       <VoiceRecorder
+                        sourceLanguage={selectedInputLanguage}
                         onTranslationComplete={(translations) => {
+                          // Map the source text based on the selected input language
+                          const sourceText = 
+                            selectedInputLanguage === "hi" ? translations.hindi :
+                            selectedInputLanguage === "ta" ? translations.tamil :
+                            selectedInputLanguage === "te" ? translations.telugu :
+                            selectedInputLanguage === "ml" ? translations.malayalam :
+                            translations.english;
+                            
                           setTranslations({
-                            sourceText: translations.hindi,
+                            sourceText,
                             english: translations.english,
                             tamil: translations.tamil,
                             telugu: translations.telugu,
