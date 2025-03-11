@@ -268,27 +268,30 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         </Select>
       </div>
 
-      <Button
-        size="lg"
-        variant={isRecording ? "destructive" : "default"}
-        onClick={isRecording ? stopRecording : startRecording}
-        className="w-40 h-40 rounded-full"
-        disabled={hasMicPermission === false}
-      >
-        {isRecording ? (
-          <StopCircle className="h-16 w-16" />
-        ) : (
-          <Mic className="h-16 w-16" />
-        )}
-      </Button>
-      <p className="text-sm text-muted-foreground">
-        {hasMicPermission === false
-          ? "Microphone access denied. Please check browser permissions."
-          : isRecording
-          ? "Recording... Click to stop"
-          : "Click to start recording"}
-      </p>
-      <div>
+      <div className="flex flex-col items-center justify-center">
+        <Button
+          size="lg"
+          variant={isRecording ? "destructive" : "default"}
+          onClick={isRecording ? stopRecording : startRecording}
+          className="w-40 h-40 rounded-full mb-2"
+          disabled={hasMicPermission === false}
+        >
+          {isRecording ? (
+            <StopCircle className="h-16 w-16" />
+          ) : (
+            <Mic className="h-16 w-16" />
+          )}
+        </Button>
+        <p className="text-sm text-muted-foreground text-center">
+          {hasMicPermission === false
+            ? "Microphone access denied. Please check browser permissions."
+            : isRecording
+            ? "Recording... Click to stop"
+            : "Click to start recording"}
+        </p>
+      </div>
+      
+      <div className="mt-4">
         <p>Recognized Text:</p>
         <pre>{currentTranscript}</pre>
       </div>
