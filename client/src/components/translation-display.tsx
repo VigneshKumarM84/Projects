@@ -13,12 +13,15 @@ interface TranslationDisplayProps {
     tamil?: string;
     telugu?: string;
     malayalam?: string;
+    hindi?: string;
   };
+  selectedLanguages?: string[];
+  languageNames?: Record<string, string>;
 }
 
-export function TranslationDisplay({ translations }: TranslationDisplayProps) {
+export function TranslationDisplay({ translations, selectedLanguages: propSelectedLanguages, languageNames: propLanguageNames }: TranslationDisplayProps) {
   const { toast } = useToast();
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(propSelectedLanguages || []);
 
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -48,13 +51,14 @@ export function TranslationDisplay({ translations }: TranslationDisplayProps) {
     }
   };
 
-  // Language display names mapping (moved here for better organization)
-  const languageNames: Record<string, string> = {
+  // Language display names mapping (using props if available)
+  const languageNames: Record<string, string> = propLanguageNames || {
     "sourceText": getSourceLanguageDisplayName(translations.sourceLanguage),
     "english": "English",
     "tamil": "Tamil",
     "telugu": "Telugu",
-    "malayalam": "Malayalam"
+    "malayalam": "Malayalam",
+    "hindi": "Hindi"
   };
 
   // Convert API language code to display name

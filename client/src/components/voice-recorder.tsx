@@ -215,6 +215,13 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         malayalam: sourceLanguage === 'ml' ? text : data.malayalam || '',
       };
       
+      // Log translations for debugging
+      console.log("Translation data:", { 
+        sourceLanguage, 
+        recognizedText: text,
+        translations
+      });
+      
       onTranslationComplete(translations);
     } catch (error) {
       toast({

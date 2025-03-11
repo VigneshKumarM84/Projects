@@ -407,8 +407,11 @@ export async function registerRoutes(app: Express) {
         ? (targetLanguages.includes('en') ? targetLanguages : [...targetLanguages, 'en']) 
         : ['en'];
 
+      // Make sure we don't translate to the same language as source
+      const uniqueTargetLanguages = languages.filter(lang => lang !== sourceLanguage);
+      
       // Map to translate text to all requested languages
-      const translationPromises = languages.map(lang => 
+      const translationPromises = uniqueTargetLanguages.map(lang => 
         translateText(text, sourceLanguage, lang)
       );
 
@@ -421,9 +424,14 @@ export async function registerRoutes(app: Express) {
       };
 
       // Add results for each target language
-      languages.forEach((lang, index) => {
+      uniqueTargetLanguages.forEach((lang, index) => {
         translations[lang] = translationResults[index];
       });
+      
+      // Make sure we include a field for all supported languages
+      if (sourceLanguage === 'hi' && !translations.hindi) {
+        translations.hindi = text;
+      }
 
       // Prepare data for storage
       const storageData = {
@@ -471,8 +479,11 @@ export async function registerRoutes(app: Express) {
         ? (targetLanguages.includes('en') ? targetLanguages : [...targetLanguages, 'en']) 
         : ['en'];
 
+      // Make sure we don't translate to the same language as source
+      const uniqueTargetLanguages = languages.filter(lang => lang !== sourceLanguage);
+      
       // Get full sentence translations first for coherence
-      const translationPromises = languages.map(lang => 
+      const translationPromises = uniqueTargetLanguages.map(lang => 
         translateText(text, sourceLanguage, lang)
       );
 
@@ -488,9 +499,22 @@ export async function registerRoutes(app: Express) {
       };
 
       // Add results for each target language - prioritize the full sentence translation
-      languages.forEach((lang, index) => {
+      uniqueTargetLanguages.forEach((lang, index) => {
         translations[lang] = translationResults[index];
       });
+      
+      // Make sure to set the source language text in its corresponding field
+      if (sourceLanguage === 'hi' && !translations.hindi) {
+        translations.hindi = text;
+      } else if (sourceLanguage === 'ta' && !translations.tamil) {
+        translations.tamil = text;
+      } else if (sourceLanguage === 'te' && !translations.telugu) {
+        translations.telugu = text;
+      } else if (sourceLanguage === 'ml' && !translations.malayalam) {
+        translations.malayalam = text;
+      } else if (sourceLanguage === 'en' && !translations.english) {
+        translations.english = text;
+      }
 
       // Add full translations from the word-by-word function if available
       if (wordByWordResult.fullTranslation) {

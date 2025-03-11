@@ -273,10 +273,18 @@ export default function Home() {
                   languageNames={languageNames}
                 />
                 
-                {translations.wordByWord && translations.wordByWord.length > 0 && (
+                {translations.wordByWord && translations.wordByWord.length > 0 && targetLanguages.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-2">Word-by-Word Translation</h3>
-                    <WordByWordTranslation translations={translations.wordByWord} />
+                    <WordByWordTranslation 
+                      translations={translations.wordByWord} 
+                      targetLanguage={
+                        targetLanguages.includes("ta") ? "tamil" :
+                        targetLanguages.includes("te") ? "telugu" :
+                        targetLanguages.includes("ml") ? "malayalam" :
+                        targetLanguages.includes("hi") ? "hindi" : "english"
+                      } 
+                    />
                   </div>
                 )}
               </div>
