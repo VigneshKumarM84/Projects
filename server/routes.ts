@@ -76,7 +76,7 @@ function generateFeedback(score: number, targetLanguage: string): string {
 
 async function translateText(text: string, fromLang: string, toLang: string) {
   try {
-    // Try Google Translate API alternative
+    // Use Google Translate API with more parameters for better translation
     const url = "https://translate.googleapis.com/translate_a/single";
 
     const params = new URLSearchParams({
@@ -84,23 +84,54 @@ async function translateText(text: string, fromLang: string, toLang: string) {
       sl: fromLang,
       tl: toLang,
       dt: 't',
+      dt: 'bd',  // Add dictionary data
+      dt: 'rm',  // Add transliteration
+      dj: '1',   // Get JSON response
       q: text
     });
 
-    const response = await fetch(`${url}?${params}`);
-    const data = await response.json();
-
-    if (data && data[0]) {
-      // Combine all sentences in the translation
-      const translatedText = data[0]
-        .filter((item: any) => item && item[0])
-        .map((item: any) => item[0])
-        .join(' ');
+    const response = await fetch(`${url}?${params.toString()}`);
+    
+    // Handle different response formats
+    const contentType = response.headers.get('content-type') || '';
+    
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
       
-      return translatedText;
+      // If we get the new format JSON response
+      if (data && data.sentences) {
+        return data.sentences
+          .map((s: any) => s.trans || '')
+          .join(' ')
+          .trim();
+      }
+      
+      // If we get the old format array response
+      if (data && Array.isArray(data) && data[0]) {
+        return data[0]
+          .filter((item: any) => item && item[0])
+          .map((item: any) => item[0])
+          .join(' ')
+          .trim();
+      }
     } else {
-      throw new Error('Translation failed');
+      // Fallback to direct text parsing if needed
+      const textData = await response.text();
+      try {
+        const jsonData = JSON.parse(textData);
+        if (Array.isArray(jsonData) && jsonData[0]) {
+          return jsonData[0]
+            .filter((item: any) => item && item[0])
+            .map((item: any) => item[0])
+            .join(' ')
+            .trim();
+        }
+      } catch (e) {
+        console.error('JSON parse error:', e);
+      }
     }
+    
+    throw new Error('Translation format not recognized');
   } catch (error) {
     console.error('Translation error:', error);
 
@@ -113,50 +144,103 @@ async function translateText(text: string, fromLang: string, toLang: string) {
       'hi': 'Hindi'
     };
 
-    // Common words in various languages as fallback
-    const commonWords: Record<string, Record<string, string>> = {
+    // Enhanced fallback translations - now with more common phrases
+    const commonPhrases: Record<string, Record<string, string>> = {
       'hi': { // Hindi to other languages
         'en': {
           'नमस्ते': 'hello',
           'धन्यवाद': 'thank you',
           'हां': 'yes',
           'नहीं': 'no',
-          // ... other words from your existing dictionary
+          'मेरा नाम': 'my name is',
+          'मुझे खुशी है': 'I am happy',
+          'कैसे हो': 'how are you',
+          'मैं ठीक हूँ': 'I am fine',
+          'आज मौसम अच्छा है': 'the weather is good today'
         }
       },
       'ta': { // Tamil to other languages
         'en': {
           'வணக்கம்': 'hello',
           'நன்றி': 'thank you',
+          'ஆம்': 'yes',
+          'இல்லை': 'no',
+          'என் பெயர்': 'my name is',
+          'நான் மகிழ்ச்சியாக இருக்கிறேன்': 'I am happy',
+          'எப்படி இருக்கிறீர்கள்': 'how are you',
+          'நான் நன்றாக இருக்கிறேன்': 'I am fine',
+          'இன்று வானிலை நன்றாக உள்ளது': 'the weather is good today'
         }
       },
       'te': { // Telugu to other languages
         'en': {
           'నమస్కారం': 'hello',
           'ధన్యవాదాలు': 'thank you',
+          'అవును': 'yes',
+          'లేదు': 'no',
+          'నా పేరు': 'my name is',
+          'నేను సంతోషంగా ఉన్నాను': 'I am happy',
+          'మీరు ఎలా ఉన్నారు': 'how are you',
+          'నేను బాగున్నాను': 'I am fine',
+          'ఈరోజు వాతావరణం బాగుంది': 'the weather is good today'
         }
       },
       'ml': { // Malayalam to other languages
         'en': {
           'നമസ്കാരം': 'hello',
           'നന്ദി': 'thank you',
+          'അതെ': 'yes',
+          'അല്ല': 'no',
+          'എന്റെ പേര്': 'my name is',
+          'എനിക്ക് സന്തോഷമുണ്ട്': 'I am happy',
+          'സുഖമാണോ': 'how are you',
+          'എനിക്ക് സുഖമാണ്': 'I am fine',
+          'ഇന്ന് കാലാവസ്ഥ നല്ലതാണ്': 'the weather is good today'
         }
       }
     };
     
-    // Try basic word-by-word fallback if dictionary exists
-    if (commonWords[fromLang] && commonWords[fromLang][toLang]) {
-      const dictionary = commonWords[fromLang][toLang];
+    // Try to use a third-party API as backup
+    try {
+      const backupResponse = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
+      const backupData = await backupResponse.json();
+      if (backupData && backupData.responseData && backupData.responseData.translatedText) {
+        return backupData.responseData.translatedText;
+      }
+    } catch (backupError) {
+      console.error('Backup translation failed:', backupError);
+    }
+    
+    // Enhanced phrase-based translation - try to match phrases first
+    if (commonPhrases[fromLang] && commonPhrases[fromLang][toLang]) {
+      const phrases = Object.keys(commonPhrases[fromLang][toLang]).sort((a, b) => b.length - a.length);
+      let translatedText = text;
+      
+      // Try to replace known phrases first
+      for (const phrase of phrases) {
+        if (text.includes(phrase)) {
+          translatedText = translatedText.replace(phrase, commonPhrases[fromLang][toLang][phrase]);
+        }
+      }
+      
+      // If we made any substitutions, return the result
+      if (translatedText !== text) {
+        return translatedText;
+      }
+      
+      // Otherwise fallback to word-by-word
+      const dictionary = commonPhrases[fromLang][toLang];
       const words = text.split(/\s+/);
       const translatedWords = words.map(word => {
-        // Strip punctuation
+        // Strip punctuation for lookup
         const cleanWord = word.replace(/[^\p{L}\p{N}]/gu, '');
-        return dictionary[cleanWord] || `[${languageNames[fromLang] || fromLang} word]`;
+        const translation = dictionary[cleanWord];
+        return translation || word;
       });
       return translatedWords.join(' ');
     }
 
-    // If no specific fallback is defined
+    // If all else fails
     return `Translation to ${languageNames[toLang] || toLang.toUpperCase()} unavailable`;
   }
 }
@@ -177,13 +261,23 @@ async function translateWords(text: string, fromLang: string = 'hi') {
   // Split text into words, preserving punctuation
   const words = text.match(pattern) || [];
   
-  // Filter out very short words for better performance
-  // but process all words to maintain sequence
+  // First get the full translation to ensure coherence
+  const fullTranslationPromises = [
+    translateText(text, fromLang, 'en'),
+    translateText(text, fromLang, 'ta'),
+    translateText(text, fromLang, 'te'),
+    translateText(text, fromLang, 'ml')
+  ];
+  
+  const [fullEnglish, fullTamil, fullTelugu, fullMalayalam] = await Promise.all(fullTranslationPromises);
+  
+  // Still process word-by-word for the interactive word lookup feature
   const translations = await Promise.all(
     words.map(async (word) => {
       // For very short words or punctuation, use simpler translation
       const needsFullTranslation = word.length > 1 && !/^[.,!?;:।॥]$/.test(word);
       
+      // For individual words, we still want word-by-word translation
       const [english, tamil, telugu, malayalam] = await Promise.all([
         needsFullTranslation ? translateText(word, fromLang, 'en') : word,
         needsFullTranslation ? translateText(word, fromLang, 'ta') : word,
@@ -201,7 +295,16 @@ async function translateWords(text: string, fromLang: string = 'hi') {
     })
   );
 
-  return translations;
+  // Attach the full translations to the response as well
+  return {
+    words: translations,
+    fullTranslation: {
+      english: fullEnglish,
+      tamil: fullTamil,
+      telugu: fullTelugu,
+      malayalam: fullMalayalam
+    }
+  };
 }
 
 async function performOCR(imageBuffer: Buffer): Promise<string> {
@@ -367,28 +470,36 @@ export async function registerRoutes(app: Express) {
         ? (targetLanguages.includes('en') ? targetLanguages : [...targetLanguages, 'en']) 
         : ['en'];
 
-      // Translate to all requested languages
+      // Get full sentence translations first for coherence
       const translationPromises = languages.map(lang => 
         translateText(text, sourceLanguage, lang)
       );
 
-      // Get both full text and word-by-word translations
-      const [translationResults, wordByWordTranslations] = await Promise.all([
-        Promise.all(translationPromises),
-        translateWords(text, sourceLanguage)
-      ]);
+      // Get word-by-word translations for interactive features
+      const wordByWordResult = await translateWords(text, sourceLanguage);
+      const translationResults = await Promise.all(translationPromises);
 
       // Create result object
       const translations: Record<string, any> = {
         sourceText: text,
         sourceLanguage,
-        wordByWord: wordByWordTranslations
+        wordByWord: wordByWordResult.words
       };
 
-      // Add results for each target language
+      // Add results for each target language - prioritize the full sentence translation
       languages.forEach((lang, index) => {
         translations[lang] = translationResults[index];
       });
+
+      // Add full translations from the word-by-word function if available
+      if (wordByWordResult.fullTranslation) {
+        Object.entries(wordByWordResult.fullTranslation).forEach(([lang, translation]) => {
+          // Only use this if we don't already have a translation for this language
+          if (!translations[lang] && translation) {
+            translations[lang] = translation;
+          }
+        });
+      }
 
       // Prepare data for storage
       const storageData = {
@@ -402,6 +513,12 @@ export async function registerRoutes(app: Express) {
 
       const validatedData = insertTranslationSchema.parse(storageData);
       await storage.createTranslation(validatedData);
+
+      // Log success for debugging
+      console.log('Translation successful:', {
+        source: text.substring(0, 20) + '...',
+        english: translations.en?.substring(0, 20) + '...'
+      });
 
       res.json(translations);
     } catch (error) {
