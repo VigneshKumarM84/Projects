@@ -277,7 +277,8 @@ async function translateWords(text: string, fromLang: string = 'hi') {
       // For very short words or punctuation, use simpler translation
       const needsFullTranslation = word.length > 1 && !/^[.,!?;:।॥]$/.test(word);
       
-      // For individual words, we still want word-by-word translation
+      // For individual words, we still want word-by-word translation for hover functionality
+      // But we'll use the full coherent translation for display
       const [english, tamil, telugu, malayalam] = await Promise.all([
         needsFullTranslation ? translateText(word, fromLang, 'en') : word,
         needsFullTranslation ? translateText(word, fromLang, 'ta') : word,

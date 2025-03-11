@@ -80,6 +80,24 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
       return;
     }
     const recognitionInstance = new SpeechRecognitionAPI();
+    
+    // Configure the recognition language based on selection
+    switch(sourceLanguage) {
+      case 'hi':
+        recognitionInstance.lang = 'hi-IN'; // Hindi
+        break;
+      case 'ta':
+        recognitionInstance.lang = 'ta-IN'; // Tamil
+        break;
+      case 'te':
+        recognitionInstance.lang = 'te-IN'; // Telugu
+        break;
+      case 'ml':
+        recognitionInstance.lang = 'ml-IN'; // Malayalam
+        break;
+      default:
+        recognitionInstance.lang = 'hi-IN'; // Default to Hindi
+    }
 
     recognitionInstance.lang = sourceLanguage;
     recognitionInstance.continuous = true; 
@@ -229,7 +247,7 @@ export function VoiceRecorder({ onTranslationComplete }: VoiceRecorderProps) {
             ))}
           </SelectContent>
         </Select>
-      </div>
+      </div>v>
 
       <Button
         size="lg"
