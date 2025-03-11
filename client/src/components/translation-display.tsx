@@ -46,9 +46,16 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
   const handleLanguageChange = (value: string) => {
     if (value === "english") {
       setSelectedLanguages([]);
+    } else if (selectedLanguages.includes(value)) {
+      // Remove the language if already selected
+      setSelectedLanguages(selectedLanguages.filter(lang => lang !== value));
     } else {
-      setSelectedLanguages([value]);
+      // Add the language to selected languages
+      setSelectedLanguages([...selectedLanguages, value]);
     }
+    // Log the selected language to help with debugging
+    console.log("Selected languages:", selectedLanguages);
+    console.log("Available translations:", translations);
   };
 
   // Language display names mapping (using props if available)

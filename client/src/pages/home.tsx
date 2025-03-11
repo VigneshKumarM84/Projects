@@ -268,7 +268,13 @@ export default function Home() {
               <div className="mt-6">
                 <TranslationDisplay
                   translations={translations}
-                  selectedLanguages={targetLanguages}
+                  selectedLanguages={targetLanguages.map(lang => 
+                    lang === "en" ? "english" : 
+                    lang === "hi" ? "hindi" : 
+                    lang === "ta" ? "tamil" : 
+                    lang === "te" ? "telugu" : 
+                    lang === "ml" ? "malayalam" : ""
+                  ).filter(Boolean)}
                   languageNames={languageNames}
                 />
 
