@@ -155,16 +155,18 @@ export default function Home() {
           <CardTitle>Step 1: Select Input Language</CardTitle>
         </CardHeader>
         <CardContent>
-          <Select onValueChange={handleInputLanguageChange} value={selectedInputLanguage}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select input language" />
-            </SelectTrigger>
-            <SelectContent>
-              {allLanguages.map(lang => (
-                <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            {allLanguages.map(lang => (
+              <Button
+                key={lang.value}
+                variant={selectedInputLanguage === lang.value ? "default" : "outline"}
+                className="w-full"
+                onClick={() => handleInputLanguageChange(lang.value)}
+              >
+                {lang.label}
+              </Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
