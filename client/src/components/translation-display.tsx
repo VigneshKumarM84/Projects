@@ -82,12 +82,15 @@ export function TranslationDisplay({ translations, selectedLanguages: propSelect
         onDownload={(text, lang) => downloadText(text, lang)}
       />
 
-      <TranslationCard
-        title="English"
-        content={translations.english}
-        onCopy={copyToClipboard}
-        onDownload={(text, lang) => downloadText(text, lang)}
-      />
+      {/* Always show English translation if available */}
+      {translations.english && (
+        <TranslationCard
+          title="English"
+          content={translations.english}
+          onCopy={copyToClipboard}
+          onDownload={(text, lang) => downloadText(text, lang)}
+        />
+      )}
 
       {selectedLanguages.includes("tamil") && translations.tamil && (
         <TranslationCard

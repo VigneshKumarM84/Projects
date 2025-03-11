@@ -277,6 +277,20 @@ export default function Home() {
                   ).filter(Boolean)}
                   languageNames={languageNames}
                 />
+                {/* For debugging in development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                    <p>Debug - Target languages: {targetLanguages.join(', ')}</p>
+                    <p>Selected: {targetLanguages.map(lang => 
+                      lang === "en" ? "english" : 
+                      lang === "hi" ? "hindi" : 
+                      lang === "ta" ? "tamil" : 
+                      lang === "te" ? "telugu" : 
+                      lang === "ml" ? "malayalam" : ""
+                    ).join(', ')}</p>
+                    <p>Available translations: {Object.keys(translations).join(', ')}</p>
+                  </div>
+                )}
 
                 {translations.wordByWord && translations.wordByWord.length > 0 && targetLanguages.length > 0 && (
                   <div className="mt-6">

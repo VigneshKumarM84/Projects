@@ -425,13 +425,36 @@ export async function registerRoutes(app: Express) {
 
       // Add results for each target language
       uniqueTargetLanguages.forEach((lang, index) => {
+        // Add translation with language code (en, hi, ta, etc.)
         translations[lang] = translationResults[index];
+        
+        // Also add with language name keys for the frontend
+        if (lang === "en") translations.english = translationResults[index];
+        if (lang === "hi") translations.hindi = translationResults[index];
+        if (lang === "ta") translations.tamil = translationResults[index];
+        if (lang === "te") translations.telugu = translationResults[index];
+        if (lang === "ml") translations.malayalam = translationResults[index];
       });
       
-      // Make sure we include a field for all supported languages
+      // Make sure we include a field for the source language
       if (sourceLanguage === 'hi' && !translations.hindi) {
         translations.hindi = text;
+      } else if (sourceLanguage === 'en' && !translations.english) {
+        translations.english = text;
+      } else if (sourceLanguage === 'ta' && !translations.tamil) {
+        translations.tamil = text;
+      } else if (sourceLanguage === 'te' && !translations.telugu) {
+        translations.telugu = text;
+      } else if (sourceLanguage === 'ml' && !translations.malayalam) {
+        translations.malayalam = text;
       }
+
+      // Log the actual translations for debugging
+      console.log('Translation successful:', {
+        source: text.substring(0, 20) + '...',
+        english: translations.english?.substring(0, 20) + '...' || 'not available',
+        targetLanguages: uniqueTargetLanguages.join(', ')
+      });
 
       // Prepare data for storage
       const storageData = {
