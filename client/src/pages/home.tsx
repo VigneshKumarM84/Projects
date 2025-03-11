@@ -277,20 +277,26 @@ export default function Home() {
                   ).filter(Boolean)}
                   languageNames={languageNames}
                 />
-                {/* For debugging in development */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                    <p>Debug - Target languages: {targetLanguages.join(', ')}</p>
-                    <p>Selected: {targetLanguages.map(lang => 
-                      lang === "en" ? "english" : 
-                      lang === "hi" ? "hindi" : 
-                      lang === "ta" ? "tamil" : 
-                      lang === "te" ? "telugu" : 
-                      lang === "ml" ? "malayalam" : ""
-                    ).join(', ')}</p>
-                    <p>Available translations: {Object.keys(translations).join(', ')}</p>
-                  </div>
-                )}
+                {/* For debugging - shown in all environments until the issue is fixed */}
+                <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                  <p>Debug - Target languages: {targetLanguages.join(', ')}</p>
+                  <p>Selected: {targetLanguages.map(lang => 
+                    lang === "en" ? "english" : 
+                    lang === "hi" ? "hindi" : 
+                    lang === "ta" ? "tamil" : 
+                    lang === "te" ? "telugu" : 
+                    lang === "ml" ? "malayalam" : ""
+                  ).join(', ')}</p>
+                  <p>Available translations: {Object.keys(translations).join(', ')}</p>
+                  <p>Translation contents:</p>
+                  <ul className="pl-4">
+                    <li>English: {translations.english?.substring(0, 30) || 'Not available'}</li>
+                    <li>Hindi: {translations.hindi?.substring(0, 30) || 'Not available'}</li>
+                    <li>Tamil: {translations.tamil?.substring(0, 30) || 'Not available'}</li>
+                    <li>Telugu: {translations.telugu?.substring(0, 30) || 'Not available'}</li>
+                    <li>Malayalam: {translations.malayalam?.substring(0, 30) || 'Not available'}</li>
+                  </ul>
+                </div>
 
                 {translations.wordByWord && translations.wordByWord.length > 0 && targetLanguages.length > 0 && (
                   <div className="mt-6">

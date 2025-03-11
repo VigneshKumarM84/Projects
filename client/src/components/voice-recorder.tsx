@@ -188,6 +188,11 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
   const translateText = async (text: string) => {
     setIsTranslating(true);
     try {
+      // Get all target languages except the source language
+      const targetLangs = ['en', 'ta', 'te', 'ml', 'hi'].filter(lang => lang !== sourceLanguage);
+      
+      console.log(`Requesting translation from ${sourceLanguage} to: ${targetLangs.join(', ')}`);
+      
       const response = await fetch('/api/translate/text', {
         method: 'POST',
         headers: {
@@ -196,11 +201,24 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         body: JSON.stringify({ 
           text,
           sourceLanguage,
-          targetLanguages: ['en', 'ta', 'te', 'ml', 'hi'].filter(lang => lang !== sourceLanguage)
+          targetLanguages: targetLangs
         }),
       });
 
       const data = await response.json();
+      
+      // Log what we received - for debugging
+      console.log("Translation data:", {
+        sourceLanguage,
+        recognizedText: text,
+        translations: {
+          hindi: data.hindi || '',
+          english: data.english || '',
+          tamil: data.tamil || '',
+          telugu: data.telugu || '',
+          malayalam: data.malayalam || ''
+        }
+      });
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to translate');
