@@ -79,14 +79,14 @@ export default function Home() {
   const [hindiScoreResult, setHindiScoreResult] = useState<ScoreResult | null>(null);
   const [pitmanScoreResult, setPitmanScoreResult] = useState<ScoreResult | null>(null); 
 
-  const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
+  const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("hi"); // Default to Hindi
   const [inputMethod, setInputMethod] = useState<string>("voice"); // Default to voice input
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
 
   // All available languages - Pitman removed from input options
   const allLanguages = [
+    { value: "hi", label: "Hindi" }, // Move Hindi to first position
     { value: "en", label: "English" },
-    { value: "hi", label: "Hindi" },
     { value: "ta", label: "Tamil" },
     { value: "te", label: "Telugu" },
     { value: "ml", label: "Malayalam" }
