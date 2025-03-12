@@ -42,7 +42,7 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       .catch(() => setHasMicPermission(false));
   }, [toast]);
 
-  // Cleanup effect
+  // Cleanup function
   useEffect(() => {
     return () => {
       if (sourceRecognition) {
@@ -79,11 +79,8 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       return;
     }
 
-    // Initialize new recognition instances
+    // Create and configure source language recognition
     const newSourceRecognition = new SpeechRecognitionAPI();
-    const newEnglishRecognition = new SpeechRecognitionAPI();
-
-    // Configure source language recognition
     newSourceRecognition.lang = sourceLanguage === 'hi' ? 'hi-IN' :
                                sourceLanguage === 'ta' ? 'ta-IN' :
                                sourceLanguage === 'te' ? 'te-IN' :
@@ -92,12 +89,13 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     newSourceRecognition.continuous = true;
     newSourceRecognition.interimResults = true;
 
-    // Configure English recognition
+    // Create and configure English recognition
+    const newEnglishRecognition = new SpeechRecognitionAPI();
     newEnglishRecognition.lang = 'en-US';
     newEnglishRecognition.continuous = true;
     newEnglishRecognition.interimResults = true;
 
-    // Source recognition event handlers
+    // Configure source recognition event handlers
     newSourceRecognition.onstart = () => {
       setIsRecording(true);
       setCurrentTranscript('');
@@ -114,58 +112,36 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       });
     };
 
-    newSourceRecognition.onend = () => {
-      if (isRecording) {
-        try {
-          newSourceRecognition.start();
-        } catch (error) {
-          console.error("Error restarting source recognition:", error);
-        }
-      }
-    };
-
-    newSourceRecognition.onresult = (event: any) => {
-      let transcript = '';
-      for (let i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          transcript += event.results[i][0].transcript + ' ';
-        }
-      }
-      transcript = transcript.trim();
+    newSourceRecognition.onresult = (event: SpeechRecognitionEvent) => {
+      const results = event.results;
+      const transcript = Array.from(results)
+        .map(result => result[0].transcript)
+        .join(' ')
+        .trim();
 
       if (transcript) {
         setCurrentTranscript(transcript);
-        onTranslationComplete({
-          sourceText: transcript,
-          englishRecognition: englishTranscript,
-          [sourceLanguage === 'hi' ? 'hindi' :
-           sourceLanguage === 'ta' ? 'tamil' :
-           sourceLanguage === 'te' ? 'telugu' :
-           sourceLanguage === 'ml' ? 'malayalam' :
-           'english']: transcript
-        });
-      }
-    };
-
-    // English recognition event handlers
-    newEnglishRecognition.onend = () => {
-      if (isRecording) {
-        try {
-          newEnglishRecognition.start();
-        } catch (error) {
-          console.error("Error restarting English recognition:", error);
+        if (results[results.length - 1].isFinal) {
+          onTranslationComplete({
+            sourceText: transcript,
+            englishRecognition: englishTranscript,
+            [sourceLanguage === 'hi' ? 'hindi' :
+             sourceLanguage === 'ta' ? 'tamil' :
+             sourceLanguage === 'te' ? 'telugu' :
+             sourceLanguage === 'ml' ? 'malayalam' :
+             'english']: transcript
+          });
         }
       }
     };
 
-    newEnglishRecognition.onresult = (event: any) => {
-      let transcript = '';
-      for (let i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          transcript += event.results[i][0].transcript + ' ';
-        }
-      }
-      transcript = transcript.trim();
+    // Configure English recognition event handlers
+    newEnglishRecognition.onresult = (event: SpeechRecognitionEvent) => {
+      const results = event.results;
+      const transcript = Array.from(results)
+        .map(result => result[0].transcript)
+        .join(' ')
+        .trim();
 
       if (transcript) {
         setEnglishTranscript(transcript);
@@ -173,13 +149,12 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     };
 
     // Error handlers
-    const handleError = (error: any) => {
-      console.error('Recognition error:', error);
-      // Ignore "no-speech" errors as they're common and not critical
+    const handleError = (error: { error: string }) => {
+      // Ignore no-speech errors as they're not critical
       if (error.error === 'no-speech') {
         return;
       }
-
+      console.error('Recognition error:', error);
       toast({
         variant: "destructive",
         title: "Recording Error",
@@ -190,7 +165,27 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     newSourceRecognition.onerror = handleError;
     newEnglishRecognition.onerror = handleError;
 
-    // Start both recognitions
+    // Ensure recognition continues
+    newSourceRecognition.onend = () => {
+      if (isRecording) {
+        try {
+          newSourceRecognition.start();
+        } catch (error) {
+          console.error("Error restarting source recognition:", error);
+        }
+      }
+    };
+
+    newEnglishRecognition.onend = () => {
+      if (isRecording) {
+        try {
+          newEnglishRecognition.start();
+        } catch (error) {
+          console.error("Error restarting English recognition:", error);
+        }
+      }
+    };
+
     try {
       newSourceRecognition.start();
       newEnglishRecognition.start();
@@ -210,19 +205,13 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     setIsRecording(false);
 
     if (sourceRecognition) {
-      try {
-        sourceRecognition.stop();
-      } catch (error) {
-        console.error("Error stopping source recognition:", error);
-      }
+      sourceRecognition.stop();
+      setSourceRecognition(null);
     }
 
     if (englishRecognition) {
-      try {
-        englishRecognition.stop();
-      } catch (error) {
-        console.error("Error stopping English recognition:", error);
-      }
+      englishRecognition.stop();
+      setEnglishRecognition(null);
     }
 
     if (currentTranscript || englishTranscript) {
