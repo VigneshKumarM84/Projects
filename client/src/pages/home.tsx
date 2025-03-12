@@ -7,15 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { LessonBrowser } from "@/components/lesson-browser";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AnswerInput } from "@/components/answer-input";
-
-interface ScoreResult {
-  userAnswer: string;
-  score: number;
-  feedback: string;
-}
 
 interface Translation {
   sourceText: string;
@@ -25,7 +18,7 @@ interface Translation {
   telugu?: string;
   malayalam?: string;
   hindi?: string;
-  pitman?: string; 
+  pitman?: string;
   wordByWord?: Array<{
     sourceText: string;
     english: string;
@@ -33,43 +26,19 @@ interface Translation {
     telugu: string;
     malayalam: string;
   }>;
-  fullTranslation?: {
-    english: string;
-    tamil: string;
-    telugu: string;
-    malayalam: string;
-  };
 }
 
-function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) {
-  let bgColor = "bg-red-100";
-  let textColor = "text-red-800";
-
-  if (score >= 85) {
-    bgColor = "bg-green-100";
-    textColor = "text-green-800";
-  } else if (score >= 65) {
-    bgColor = "bg-yellow-100";
-    textColor = "text-yellow-800";
-  } else if (score >= 40) {
-    bgColor = "bg-orange-100";
-    textColor = "text-orange-800";
-  }
-
-  return (
-    <div className={`p-4 rounded-md ${bgColor} ${textColor} mt-4`}>
-      <div className="flex items-center justify-between">
-        <span className="font-semibold">Score: {score}%</span>
-      </div>
-      <p className="mt-2">{feedback}</p>
-    </div>
-  );
+interface ScoreResult {
+  userAnswer: string;
+  score: number;
+  feedback: string;
 }
 
 export default function Home() {
+  // Initialize with Hindi as default source language
   const [translations, setTranslations] = useState<Translation>({
     sourceText: "",
-    sourceLanguage: "",
+    sourceLanguage: "hi",
   });
 
   const [englishScoreResult, setEnglishScoreResult] = useState<ScoreResult | null>(null);
@@ -77,22 +46,22 @@ export default function Home() {
   const [teluguScoreResult, setTeluguScoreResult] = useState<ScoreResult | null>(null);
   const [malayalamScoreResult, setMalayalamScoreResult] = useState<ScoreResult | null>(null);
   const [hindiScoreResult, setHindiScoreResult] = useState<ScoreResult | null>(null);
-  const [pitmanScoreResult, setPitmanScoreResult] = useState<ScoreResult | null>(null); 
+  const [pitmanScoreResult, setPitmanScoreResult] = useState<ScoreResult | null>(null);
 
   const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("hi"); // Default to Hindi
   const [inputMethod, setInputMethod] = useState<string>("voice"); // Default to voice input
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
 
-  // All available languages - Pitman removed from input options
+  // All available input languages (excluding Pitman)
   const allLanguages = [
-    { value: "hi", label: "Hindi" }, // Move Hindi to first position
+    { value: "hi", label: "Hindi" }, // Hindi first as default
     { value: "en", label: "English" },
     { value: "ta", label: "Tamil" },
     { value: "te", label: "Telugu" },
     { value: "ml", label: "Malayalam" }
   ];
 
-  // Available target languages - including Pitman
+  // Available target languages (including Pitman)
   const availableTargetLanguages = [
     ...allLanguages,
     { value: "pi", label: "Pitman Shorthand" }
@@ -102,32 +71,28 @@ export default function Home() {
 
   // Handle target language selection/deselection
   const toggleTargetLanguage = (langCode: string) => {
-    if (targetLanguages.includes(langCode)) {
-      setTargetLanguages(targetLanguages.filter(lang => lang !== langCode));
-    } else {
-      setTargetLanguages([...targetLanguages, langCode]);
-    }
+    setTargetLanguages(prev => 
+      prev.includes(langCode) 
+        ? prev.filter(lang => lang !== langCode)
+        : [...prev, langCode]
+    );
   };
 
   // Map language codes to language names
   const languageNames: Record<string, string> = {
-    sourceText: selectedInputLanguage === "en" ? "English" : 
-                selectedInputLanguage === "hi" ? "Hindi" :
-                selectedInputLanguage === "ta" ? "Tamil" :
-                selectedInputLanguage === "te" ? "Telugu" :
-                selectedInputLanguage === "ml" ? "Malayalam" : "Source", 
+    sourceText: "Source",
     english: "English",
     hindi: "Hindi",
     tamil: "Tamil",
     telugu: "Telugu",
     malayalam: "Malayalam",
-    pitman: "Pitman Shorthand" 
+    pitman: "Pitman Shorthand"
   };
 
   // Reset states when input language changes
   const handleInputLanguageChange = (lang: string) => {
     setSelectedInputLanguage(lang);
-    setInputMethod("voice"); // Ensure voice input is selected when changing language
+    setInputMethod("voice"); // Keep voice input as default
     setTargetLanguages([]);
     setTranslations({
       sourceText: "",
@@ -138,23 +103,13 @@ export default function Home() {
     setTeluguScoreResult(null);
     setMalayalamScoreResult(null);
     setHindiScoreResult(null);
-    setPitmanScoreResult(null); 
+    setPitmanScoreResult(null);
   };
 
   return (
     <div className="container py-8 max-w-4xl">
       <h1 className="text-3xl font-bold text-center mb-2">Indian Language Translator</h1>
       <p className="text-center text-slate-600 mb-6">Translate between Indian languages and practice your translations</p>
-
-      <div className="bg-slate-50 p-4 rounded-md mx-auto max-w-3xl text-left border border-slate-200 mb-6">
-        <h3 className="font-semibold text-lg mb-2">How to Use This App:</h3>
-        <ol className="list-decimal list-inside space-y-2 text-sm">
-          <li><span className="font-medium">Select Input Language:</span> Choose the source language you want to translate from.</li>
-          <li><span className="font-medium">Choose Input Method:</span> Select voice input or text input.</li>
-          <li><span className="font-medium">Select Target Languages:</span> Choose which languages you want to translate to.</li>
-          <li><span className="font-medium">Translation Practice:</span> Enter your translation to get feedback.</li>
-        </ol>
-      </div>
 
       {/* Step 1: Select Input Language */}
       <Card className="mb-6">
@@ -177,14 +132,14 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Step 2: Select Input Method (only if input language is selected) */}
+      {/* Step 2: Input Method Selection */}
       {selectedInputLanguage && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Step 2: Choose Input Method</CardTitle>
+            <CardTitle>Step 2: Input Method</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="voice" value={inputMethod} onValueChange={setInputMethod}>  {/* Set defaultValue to "voice" */}
+            <Tabs defaultValue="voice" value={inputMethod} onValueChange={setInputMethod}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="voice" className="relative">
                   Voice Input
@@ -192,63 +147,34 @@ export default function Home() {
                 </TabsTrigger>
                 <TabsTrigger value="text">Text Input</TabsTrigger>
               </TabsList>
-              <div className="mt-2 text-center">
-                <a href="https://www.google.com/inputtools/try/" target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 hover:underline">
-                  Need help typing in Indian languages? Try Google Input Tools
-                </a>
-              </div>
 
               {inputMethod === "voice" && (
                 <TabsContent value="voice">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Record Voice in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : selectedInputLanguage === "ml" ? "malayalam" : "pitman"]}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <VoiceRecorder
-                        sourceLanguage={selectedInputLanguage}
-                        onTranslationComplete={(translations) => {
-                          const sourceText = 
-                            selectedInputLanguage === "hi" ? translations.hindi :
-                            selectedInputLanguage === "ta" ? translations.tamil :
-                            selectedInputLanguage === "te" ? translations.telugu :
-                            selectedInputLanguage === "ml" ? translations.malayalam :
-                            translations.english;
-
-                          setTranslations({
-                            sourceText,
-                            english: translations.english,
-                            tamil: translations.tamil,
-                            telugu: translations.telugu,
-                            malayalam: translations.malayalam,
-                            pitman: translations.pitman, 
-                            sourceLanguage: selectedInputLanguage,
-                          });
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
+                  <VoiceRecorder
+                    sourceLanguage={selectedInputLanguage}
+                    onTranslationComplete={(translations) => {
+                      const sourceText = translations[selectedInputLanguage] || translations.english;
+                      setTranslations({
+                        sourceText,
+                        sourceLanguage: selectedInputLanguage,
+                        ...translations
+                      });
+                    }}
+                  />
                 </TabsContent>
               )}
 
               {inputMethod === "text" && (
                 <TabsContent value="text">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Enter Text in {languageNames[selectedInputLanguage === "en" ? "english" : selectedInputLanguage === "hi" ? "hindi" : selectedInputLanguage === "ta" ? "tamil" : selectedInputLanguage === "te" ? "telugu" : selectedInputLanguage === "ml" ? "malayalam" : "pitman"]}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <TextUploader
-                        sourceLanguage={selectedInputLanguage}
-                        onTextReceived={(text) => {
-                          setTranslations({
-                            sourceText: text,
-                            sourceLanguage: selectedInputLanguage,
-                          });
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
+                  <TextUploader
+                    sourceLanguage={selectedInputLanguage}
+                    onTextReceived={(text) => {
+                      setTranslations({
+                        sourceText: text,
+                        sourceLanguage: selectedInputLanguage,
+                      });
+                    }}
+                  />
                 </TabsContent>
               )}
             </Tabs>
@@ -399,6 +325,31 @@ export default function Home() {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+function ScoreDisplay({ score, feedback }: { score: number; feedback: string }) {
+  let bgColor = "bg-red-100";
+  let textColor = "text-red-800";
+
+  if (score >= 85) {
+    bgColor = "bg-green-100";
+    textColor = "text-green-800";
+  } else if (score >= 65) {
+    bgColor = "bg-yellow-100";
+    textColor = "text-yellow-800";
+  } else if (score >= 40) {
+    bgColor = "bg-orange-100";
+    textColor = "text-orange-800";
+  }
+
+  return (
+    <div className={`p-4 rounded-md ${bgColor} ${textColor} mt-4`}>
+      <div className="flex items-center justify-between">
+        <span className="font-semibold">Score: {score}%</span>
+      </div>
+      <p className="mt-2">{feedback}</p>
     </div>
   );
 }
