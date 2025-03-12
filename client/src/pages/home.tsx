@@ -80,7 +80,7 @@ export default function Home() {
   const [pitmanScoreResult, setPitmanScoreResult] = useState<ScoreResult | null>(null); 
 
   const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
-  const [inputMethod, setInputMethod] = useState<string>("");
+  const [inputMethod, setInputMethod] = useState<string>("voice"); // Changed default to "voice"
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
 
   // All available languages - Pitman removed from input options
@@ -184,9 +184,12 @@ export default function Home() {
             <CardTitle>Step 2: Choose Input Method</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={inputMethod} onValueChange={setInputMethod}>
+            <Tabs defaultValue="voice" value={inputMethod} onValueChange={setInputMethod}>  {/* Set defaultValue to "voice" */}
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="voice">Voice Input</TabsTrigger>
+                <TabsTrigger value="voice" className="relative">
+                  Voice Input
+                  <span className="absolute top-0 right-0 px-1 text-xs bg-blue-100 text-blue-800 rounded">Default</span>
+                </TabsTrigger>
                 <TabsTrigger value="text">Text Input</TabsTrigger>
               </TabsList>
               <div className="mt-2 text-center">
@@ -358,22 +361,22 @@ export default function Home() {
 
               {targetLanguages.map(lang => {
                 const langName = lang === "en" ? "english" : 
-                                 lang === "hi" ? "hindi" : 
-                                 lang === "ta" ? "tamil" : 
-                                 lang === "te" ? "telugu" : 
-                                 lang === "ml" ? "malayalam" : "pitman"; 
+                                  lang === "hi" ? "hindi" : 
+                                  lang === "ta" ? "tamil" : 
+                                  lang === "te" ? "telugu" : 
+                                  lang === "ml" ? "malayalam" : "pitman"; 
 
                 const setScoreResult = lang === "en" ? setEnglishScoreResult :
-                                         lang === "hi" ? setHindiScoreResult :
-                                         lang === "ta" ? setTamilScoreResult :
-                                         lang === "te" ? setTeluguScoreResult :
-                                         lang === "ml" ? setMalayalamScoreResult : setPitmanScoreResult; 
+                                             lang === "hi" ? setHindiScoreResult :
+                                             lang === "ta" ? setTamilScoreResult :
+                                             lang === "te" ? setTeluguScoreResult :
+                                             lang === "ml" ? setMalayalamScoreResult : setPitmanScoreResult; 
 
                 const scoreResult = lang === "en" ? englishScoreResult :
-                                     lang === "hi" ? hindiScoreResult :
-                                     lang === "ta" ? tamilScoreResult :
-                                     lang === "te" ? teluguScoreResult :
-                                     lang === "ml" ? malayalamScoreResult : pitmanScoreResult; 
+                                         lang === "hi" ? hindiScoreResult :
+                                         lang === "ta" ? tamilScoreResult :
+                                         lang === "te" ? teluguScoreResult :
+                                         lang === "ml" ? malayalamScoreResult : pitmanScoreResult; 
 
                 return (
                   <TabsContent key={lang} value={lang}>
