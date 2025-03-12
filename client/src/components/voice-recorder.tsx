@@ -1,37 +1,31 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import * as React from "react";
 import { Mic, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@radix-ui/react-select'
-import { Label } from "@radix-ui/react-label"
+import { Card } from "@/components/ui/card";
 
 interface VoiceRecorderProps {
-  sourceLanguage?: string;
+  sourceLanguage: string;
   onTranslationComplete: (translations: {
-    hindi: string;
-    english: string;
-    tamil: string;
-    telugu: string;
-    malayalam: string;
-    pitman: string; // Added Pitman
+    sourceText: string;
+    englishRecognition: string;
+    hindi?: string;
+    english?: string;
+    tamil?: string;
+    telugu?: string;
+    malayalam?: string;
+    pitman?: string;
   }) => void;
 }
 
-export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTranslationComplete }: VoiceRecorderProps) {
+export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [transcription, setTranscription] = useState("");
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [sourceLanguage, setSourceLanguage] = useState(propSourceLanguage);
-  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [currentTranscript, setCurrentTranscript] = useState<string>('');
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [englishTranscript, setEnglishTranscript] = useState<string>('');
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const { toast } = useToast();
-  const [showRecordingEnded, setShowRecordingEnded] = useState(false); // Added state for popup
+  const [showRecordingEnded, setShowRecordingEnded] = useState(false);
 
   // Auto-hide recording ended popup after 3 seconds
   useEffect(() => {
@@ -46,18 +40,7 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
     };
   }, [showRecordingEnded]);
 
-  // Language options
-  const languageOptions = [
-    { value: "hi", label: "Hindi" },
-    { value: "ta", label: "Tamil" },
-    { value: "te", label: "Telugu" },
-    { value: "ml", label: "Malayalam" },
-    { value: "en", label: "English" },
-    { value: "pitman", label: "Pitman Shorthand" } // Added Pitman
-  ];
-
   useEffect(() => {
-    // Check if browser supports SpeechRecognition
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
       toast({
         variant: "destructive",
@@ -67,7 +50,6 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
       return;
     }
 
-    // Check microphone permission
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(() => setHasMicPermission(true))
       .catch(() => setHasMicPermission(false));
@@ -97,73 +79,69 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
       });
       return;
     }
-    const recognitionInstance = new SpeechRecognitionAPI();
 
-    // Configure the recognition language based on selection
-    switch(sourceLanguage) {
-      case 'hi':
-        recognitionInstance.lang = 'hi-IN'; // Hindi
-        break;
-      case 'ta':
-        recognitionInstance.lang = 'ta-IN'; // Tamil
-        break;
-      case 'te':
-        recognitionInstance.lang = 'te-IN'; // Telugu
-        break;
-      case 'ml':
-        recognitionInstance.lang = 'ml-IN'; // Malayalam
-        break;
-      case 'en':
-        recognitionInstance.lang = 'en-US'; // English
-        break;
-      case 'pitman':
-        //Handle Pitman -  This requires a specialized speech recognition engine for Pitman shorthand.  This is beyond the scope of this example.
-        recognitionInstance.lang = 'en-US'; // Placeholder - Needs a Pitman-specific language code
-        break;
-      default:
-        recognitionInstance.lang = 'hi-IN'; // Default to Hindi
-    }
-    recognitionInstance.continuous = true; 
-    recognitionInstance.interimResults = true; 
-    recognitionInstance.maxAlternatives = 1;
+    const sourceRecognition = new SpeechRecognitionAPI();
+    const englishRecognition = new SpeechRecognitionAPI();
 
-    recognitionInstance.onstart = () => {
+    sourceRecognition.lang = sourceLanguage === 'hi' ? 'hi-IN' :
+                            sourceLanguage === 'ta' ? 'ta-IN' :
+                            sourceLanguage === 'te' ? 'te-IN' :
+                            sourceLanguage === 'ml' ? 'ml-IN' :
+                            'en-US';
+    sourceRecognition.continuous = true;
+    sourceRecognition.interimResults = true;
+
+    englishRecognition.lang = 'en-US';
+    englishRecognition.continuous = true;
+    englishRecognition.interimResults = true;
+
+    sourceRecognition.onstart = () => {
       toast({
         title: "Recording Started",
-        description: "Speak in your selected language...",
+        description: `Speak in ${
+          sourceLanguage === 'hi' ? 'Hindi' :
+          sourceLanguage === 'ta' ? 'Tamil' :
+          sourceLanguage === 'te' ? 'Telugu' :
+          sourceLanguage === 'ml' ? 'Malayalam' :
+          'English'
+        }...`,
       });
       setIsRecording(true);
-      setCurrentTranscript(''); 
+      setCurrentTranscript('');
+      setEnglishTranscript('');
     };
 
-    recognitionInstance.onresult = async (event) => {
+    sourceRecognition.onresult = (event) => {
       const transcript = Array.from(event.results)
         .map(result => result[0].transcript)
         .join(" ")
         .trim();
 
-      const cleanedTranscript = transcript
-        .replace(/([।\u0964])/g, "$1 ") 
-        .replace(/(\S)(\s+)(\S)/g, "$1 $3") 
-        .replace(/\s+/g, " ") 
-        .trim();
-
-      setCurrentTranscript(cleanedTranscript); 
+      setCurrentTranscript(transcript);
 
       if (event.results[0].isFinal) {
-        try {
-          await translateText(cleanedTranscript);
-        } catch (error) {
-          toast({
-            variant: "destructive",
-            title: "Translation Error",
-            description: "Failed to translate the text. Please try again.",
-          });
-        }
+        onTranslationComplete({
+          sourceText: transcript,
+          englishRecognition: englishTranscript,
+          [sourceLanguage === 'hi' ? 'hindi' :
+           sourceLanguage === 'ta' ? 'tamil' :
+           sourceLanguage === 'te' ? 'telugu' :
+           sourceLanguage === 'ml' ? 'malayalam' :
+           'english']: transcript
+        });
       }
     };
 
-    recognitionInstance.onerror = (event) => {
+    englishRecognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join(" ")
+        .trim();
+
+      setEnglishTranscript(transcript);
+    };
+
+    const handleError = (event: { error: string }) => {
       toast({
         variant: "destructive",
         title: "Recording Error",
@@ -172,31 +150,13 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
       stopRecording();
     };
 
-    recognitionInstance.onend = () => {
-      if (isRecording) {
-        try {
-          recognitionInstance.start();
-        } catch (error) {
-          console.error("Could not restart recording:", error);
-          setIsRecording(false);
-          toast({
-            title: "Recording Ended",
-            description: "Recording stopped unexpectedly. Please try again.",
-          });
-        }
-      } else {
-        setIsRecording(false);
-        setShowRecordingEnded(true); // Show popup on recording end
-        toast({
-          title: "Recording Ended",
-          description: "Processing your speech...",
-        });
-      }
-    };
+    sourceRecognition.onerror = handleError;
+    englishRecognition.onerror = handleError;
 
     try {
-      recognitionInstance.start();
-      setRecognition(recognitionInstance);
+      sourceRecognition.start();
+      englishRecognition.start();
+      setRecognition(sourceRecognition);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -205,76 +165,6 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
       });
     }
   };
-
-  const translateText = async (text: string) => {
-    setIsTranslating(true);
-    try {
-      // Get all target languages except the source language
-      const targetLangs = ['en', 'ta', 'te', 'ml', 'hi', 'pitman'].filter(lang => lang !== sourceLanguage);
-
-      console.log(`Requesting translation from ${sourceLanguage} to: ${targetLangs.join(', ')}`);
-
-      const response = await fetch('/api/translate/text', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          text,
-          sourceLanguage,
-          targetLanguages: targetLangs
-        }),
-      });
-
-      const data = await response.json();
-
-      // Log what we received - for debugging
-      console.log("Translation data:", {
-        sourceLanguage,
-        recognizedText: text,
-        translations: {
-          hindi: data.hindi || '',
-          english: data.english || '',
-          tamil: data.tamil || '',
-          telugu: data.telugu || '',
-          malayalam: data.malayalam || '',
-          pitman: data.pitman || '' // Added Pitman
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to translate');
-      }
-
-      // Create a translations object with the recognized source text in the correct language field
-      const translations = {
-        hindi: sourceLanguage === 'hi' ? text : data.hindi || '',
-        english: sourceLanguage === 'en' ? text : data.english || '',
-        tamil: sourceLanguage === 'ta' ? text : data.tamil || '',
-        telugu: sourceLanguage === 'te' ? text : data.telugu || '',
-        malayalam: sourceLanguage === 'ml' ? text : data.malayalam || '',
-        pitman: sourceLanguage === 'pitman' ? text : data.pitman || '' // Added Pitman
-      };
-
-      // Log translations for debugging
-      console.log("Translation data:", { 
-        sourceLanguage, 
-        recognizedText: text,
-        translations
-      });
-
-      onTranslationComplete(translations);
-    } catch (error) {
-      toast({
-        title: "Translation Error",
-        description: error instanceof Error ? error.message : "Failed to translate speech",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
 
   const stopRecording = () => {
     if (recognition) {
@@ -286,29 +176,27 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
       setRecognition(null);
     }
     setIsRecording(false);
+
+    if (currentTranscript || englishTranscript) {
+      onTranslationComplete({
+        sourceText: currentTranscript,
+        englishRecognition: englishTranscript,
+        [sourceLanguage === 'hi' ? 'hindi' :
+         sourceLanguage === 'ta' ? 'tamil' :
+         sourceLanguage === 'te' ? 'telugu' :
+         sourceLanguage === 'ml' ? 'malayalam' :
+         'english']: currentTranscript
+      });
+    }
+    setShowRecordingEnded(true);
+    toast({
+      title: "Recording Ended",
+      description: "Processing your speech...",
+    });
   };
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <Label htmlFor="source-language">Input Language</Label>
-        <Select 
-          value={sourceLanguage} 
-          onValueChange={setSourceLanguage}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select language" />
-          </SelectTrigger>
-          <SelectContent>
-            {languageOptions.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="flex flex-col items-center justify-center">
         <Button
           size="lg"
@@ -332,10 +220,20 @@ export function VoiceRecorder({ sourceLanguage: propSourceLanguage = "hi", onTra
         </p>
       </div>
 
-      <div className="mt-4">
-        <p>Recognized Text:</p>
-        <pre>{currentTranscript}</pre>
-      </div>
+      {(currentTranscript || englishTranscript) && (
+        <Card className="p-4">
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Recognized Text:</h3>
+              <p className="bg-muted p-2 rounded">{currentTranscript}</p>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2">English Recognition:</h3>
+              <p className="bg-muted p-2 rounded">{englishTranscript}</p>
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
