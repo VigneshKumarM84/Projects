@@ -80,7 +80,7 @@ export default function Home() {
   const [pitmanScoreResult, setPitmanScoreResult] = useState<ScoreResult | null>(null); 
 
   const [selectedInputLanguage, setSelectedInputLanguage] = useState<string>("");
-  const [inputMethod, setInputMethod] = useState<string>("voice"); // Changed default to "voice"
+  const [inputMethod, setInputMethod] = useState<string>("voice"); // Default to voice input
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
 
   // All available languages - Pitman removed from input options
@@ -127,7 +127,7 @@ export default function Home() {
   // Reset states when input language changes
   const handleInputLanguageChange = (lang: string) => {
     setSelectedInputLanguage(lang);
-    setInputMethod("");
+    setInputMethod("voice"); // Ensure voice input is selected when changing language
     setTargetLanguages([]);
     setTranslations({
       sourceText: "",
