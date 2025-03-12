@@ -22,8 +22,7 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
   const [isRecording, setIsRecording] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState<string>('');
   const [englishTranscript, setEnglishTranscript] = useState<string>('');
-  const [sourceRecognition, setSourceRecognition] = useState<SpeechRecognition | null>(null);
-  const [englishRecognition, setEnglishRecognition] = useState<SpeechRecognition | null>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const { toast } = useToast();
 
@@ -45,14 +44,11 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
   // Cleanup function
   useEffect(() => {
     return () => {
-      if (sourceRecognition) {
-        sourceRecognition.stop();
-      }
-      if (englishRecognition) {
-        englishRecognition.stop();
+      if (recognition) {
+        recognition.stop();
       }
     };
-  }, [sourceRecognition, englishRecognition]);
+  }, [recognition]);
 
   const startRecording = async () => {
     if (!hasMicPermission) {
@@ -79,27 +75,17 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       return;
     }
 
-    // Create and configure source language recognition
-    const newSourceRecognition = new SpeechRecognitionAPI();
-    newSourceRecognition.lang = sourceLanguage === 'hi' ? 'hi-IN' :
-                               sourceLanguage === 'ta' ? 'ta-IN' :
-                               sourceLanguage === 'te' ? 'te-IN' :
-                               sourceLanguage === 'ml' ? 'ml-IN' :
-                               'en-US';
-    newSourceRecognition.continuous = true;
-    newSourceRecognition.interimResults = true;
+    const recognitionInstance = new SpeechRecognitionAPI();
+    recognitionInstance.lang = sourceLanguage === 'hi' ? 'hi-IN' :
+                            sourceLanguage === 'ta' ? 'ta-IN' :
+                            sourceLanguage === 'te' ? 'te-IN' :
+                            sourceLanguage === 'ml' ? 'ml-IN' :
+                            'en-US';
+    recognitionInstance.continuous = true;
+    recognitionInstance.interimResults = true;
 
-    // Create and configure English recognition
-    const newEnglishRecognition = new SpeechRecognitionAPI();
-    newEnglishRecognition.lang = 'en-US';
-    newEnglishRecognition.continuous = true;
-    newEnglishRecognition.interimResults = true;
-
-    // Configure source recognition event handlers
-    newSourceRecognition.onstart = () => {
+    recognitionInstance.onstart = () => {
       setIsRecording(true);
-      setCurrentTranscript('');
-      setEnglishTranscript('');
       toast({
         title: "Recording Started",
         description: `Speak in ${
@@ -112,85 +98,59 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       });
     };
 
-    newSourceRecognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
       const results = event.results;
       const transcript = Array.from(results)
         .map(result => result[0].transcript)
         .join(' ')
         .trim();
 
-      if (transcript) {
-        setCurrentTranscript(transcript);
-        if (results[results.length - 1].isFinal) {
-          onTranslationComplete({
-            sourceText: transcript,
-            englishRecognition: englishTranscript,
-            [sourceLanguage === 'hi' ? 'hindi' :
-             sourceLanguage === 'ta' ? 'tamil' :
-             sourceLanguage === 'te' ? 'telugu' :
-             sourceLanguage === 'ml' ? 'malayalam' :
-             'english']: transcript
-          });
+      setCurrentTranscript(transcript);
+
+      // Also try to recognize English
+      if (sourceLanguage !== 'en') {
+        const englishTranscript = transcript; // For now, store the same transcript
+        setEnglishTranscript(englishTranscript);
+      }
+
+      if (results[results.length - 1].isFinal) {
+        onTranslationComplete({
+          sourceText: transcript,
+          englishRecognition: englishTranscript || transcript,
+          [sourceLanguage === 'hi' ? 'hindi' :
+          sourceLanguage === 'ta' ? 'tamil' :
+          sourceLanguage === 'te' ? 'telugu' :
+          sourceLanguage === 'ml' ? 'malayalam' :
+          'english']: transcript
+        });
+      }
+    };
+
+    recognitionInstance.onend = () => {
+      if (isRecording) {
+        try {
+          recognitionInstance.start();
+        } catch (error) {
+          console.error("Error restarting recognition:", error);
         }
       }
     };
 
-    // Configure English recognition event handlers
-    newEnglishRecognition.onresult = (event: SpeechRecognitionEvent) => {
-      const results = event.results;
-      const transcript = Array.from(results)
-        .map(result => result[0].transcript)
-        .join(' ')
-        .trim();
-
-      if (transcript) {
-        setEnglishTranscript(transcript);
+    recognitionInstance.onerror = (event: { error: string }) => {
+      if (event.error === 'no-speech') {
+        return; // Ignore no-speech errors
       }
-    };
-
-    // Error handlers
-    const handleError = (error: { error: string }) => {
-      // Ignore no-speech errors as they're not critical
-      if (error.error === 'no-speech') {
-        return;
-      }
-      console.error('Recognition error:', error);
+      console.error('Recognition error:', event);
       toast({
         variant: "destructive",
         title: "Recording Error",
-        description: `Error: ${error.error}. Please try again.`,
+        description: `Error: ${event.error}. Please try again.`,
       });
     };
 
-    newSourceRecognition.onerror = handleError;
-    newEnglishRecognition.onerror = handleError;
-
-    // Ensure recognition continues
-    newSourceRecognition.onend = () => {
-      if (isRecording) {
-        try {
-          newSourceRecognition.start();
-        } catch (error) {
-          console.error("Error restarting source recognition:", error);
-        }
-      }
-    };
-
-    newEnglishRecognition.onend = () => {
-      if (isRecording) {
-        try {
-          newEnglishRecognition.start();
-        } catch (error) {
-          console.error("Error restarting English recognition:", error);
-        }
-      }
-    };
-
     try {
-      newSourceRecognition.start();
-      newEnglishRecognition.start();
-      setSourceRecognition(newSourceRecognition);
-      setEnglishRecognition(newEnglishRecognition);
+      recognitionInstance.start();
+      setRecognition(recognitionInstance);
     } catch (error) {
       console.error("Failed to start recognition:", error);
       toast({
@@ -203,21 +163,15 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
 
   const stopRecording = () => {
     setIsRecording(false);
-
-    if (sourceRecognition) {
-      sourceRecognition.stop();
-      setSourceRecognition(null);
+    if (recognition) {
+      recognition.stop();
+      setRecognition(null);
     }
 
-    if (englishRecognition) {
-      englishRecognition.stop();
-      setEnglishRecognition(null);
-    }
-
-    if (currentTranscript || englishTranscript) {
+    if (currentTranscript) {
       onTranslationComplete({
         sourceText: currentTranscript,
-        englishRecognition: englishTranscript,
+        englishRecognition: englishTranscript || currentTranscript,
         [sourceLanguage === 'hi' ? 'hindi' :
          sourceLanguage === 'ta' ? 'tamil' :
          sourceLanguage === 'te' ? 'telugu' :
@@ -266,7 +220,7 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
             </div>
             <div>
               <h3 className="font-medium mb-2">English Recognition:</h3>
-              <p className="bg-muted p-2 rounded">{englishTranscript}</p>
+              <p className="bg-muted p-2 rounded">{englishTranscript || currentTranscript}</p>
             </div>
           </div>
         </Card>
