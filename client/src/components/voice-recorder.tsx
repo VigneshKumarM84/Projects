@@ -22,23 +22,10 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
   const [isRecording, setIsRecording] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState<string>('');
   const [englishTranscript, setEnglishTranscript] = useState<string>('');
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [sourceRecognition, setSourceRecognition] = useState<SpeechRecognition | null>(null);
+  const [englishRecognition, setEnglishRecognition] = useState<SpeechRecognition | null>(null);
   const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const { toast } = useToast();
-  const [showRecordingEnded, setShowRecordingEnded] = useState(false);
-
-  // Auto-hide recording ended popup after 3 seconds
-  useEffect(() => {
-    let timer: number;
-    if (showRecordingEnded) {
-      timer = window.setTimeout(() => {
-        setShowRecordingEnded(false);
-      }, 3000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [showRecordingEnded]);
 
   useEffect(() => {
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
@@ -80,22 +67,26 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       return;
     }
 
-    const sourceRecognition = new SpeechRecognitionAPI();
-    const englishRecognition = new SpeechRecognitionAPI();
+    const newSourceRecognition = new SpeechRecognitionAPI();
+    const newEnglishRecognition = new SpeechRecognitionAPI();
 
-    sourceRecognition.lang = sourceLanguage === 'hi' ? 'hi-IN' :
-                            sourceLanguage === 'ta' ? 'ta-IN' :
-                            sourceLanguage === 'te' ? 'te-IN' :
-                            sourceLanguage === 'ml' ? 'ml-IN' :
-                            'en-US';
-    sourceRecognition.continuous = true;
-    sourceRecognition.interimResults = true;
+    // Configure source language recognition
+    newSourceRecognition.lang = sourceLanguage === 'hi' ? 'hi-IN' :
+                               sourceLanguage === 'ta' ? 'ta-IN' :
+                               sourceLanguage === 'te' ? 'te-IN' :
+                               sourceLanguage === 'ml' ? 'ml-IN' :
+                               'en-US';
+    newSourceRecognition.continuous = true;
+    newSourceRecognition.interimResults = true;
 
-    englishRecognition.lang = 'en-US';
-    englishRecognition.continuous = true;
-    englishRecognition.interimResults = true;
+    // Configure English recognition
+    newEnglishRecognition.lang = 'en-US';
+    newEnglishRecognition.continuous = true;
+    newEnglishRecognition.interimResults = true;
 
-    sourceRecognition.onstart = () => {
+    // Source recognition event handlers
+    newSourceRecognition.onstart = () => {
+      setIsRecording(true);
       toast({
         title: "Recording Started",
         description: `Speak in ${
@@ -106,14 +97,22 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
           'English'
         }...`,
       });
-      setIsRecording(true);
-      setCurrentTranscript('');
-      setEnglishTranscript('');
     };
 
-    sourceRecognition.onresult = (event) => {
+    newSourceRecognition.onend = () => {
+      // Restart recognition if we're still supposed to be recording
+      if (isRecording) {
+        try {
+          newSourceRecognition.start();
+        } catch (error) {
+          console.error("Error restarting source recognition:", error);
+        }
+      }
+    };
+
+    newSourceRecognition.onresult = (event: any) => {
       const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
+        .map((result: any) => result[0].transcript)
         .join(" ")
         .trim();
 
@@ -132,32 +131,48 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       }
     };
 
-    englishRecognition.onresult = (event) => {
+    // English recognition event handlers
+    newEnglishRecognition.onend = () => {
+      // Restart recognition if we're still supposed to be recording
+      if (isRecording) {
+        try {
+          newEnglishRecognition.start();
+        } catch (error) {
+          console.error("Error restarting English recognition:", error);
+        }
+      }
+    };
+
+    newEnglishRecognition.onresult = (event: any) => {
       const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
+        .map((result: any) => result[0].transcript)
         .join(" ")
         .trim();
 
       setEnglishTranscript(transcript);
     };
 
-    const handleError = (event: { error: string }) => {
+    // Error handlers
+    const handleError = (error: any) => {
+      console.error('Recognition error:', error);
       toast({
         variant: "destructive",
         title: "Recording Error",
-        description: `Error: ${event.error}. Please try again.`,
+        description: `Error: ${error.error}. Please try again.`,
       });
-      stopRecording();
     };
 
-    sourceRecognition.onerror = handleError;
-    englishRecognition.onerror = handleError;
+    newSourceRecognition.onerror = handleError;
+    newEnglishRecognition.onerror = handleError;
 
+    // Start both recognitions
     try {
-      sourceRecognition.start();
-      englishRecognition.start();
-      setRecognition(sourceRecognition);
+      newSourceRecognition.start();
+      newEnglishRecognition.start();
+      setSourceRecognition(newSourceRecognition);
+      setEnglishRecognition(newEnglishRecognition);
     } catch (error) {
+      console.error("Failed to start recognition:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -167,15 +182,23 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
   };
 
   const stopRecording = () => {
-    if (recognition) {
-      try {
-        recognition.stop();
-      } catch (error) {
-        console.error("Error stopping recognition:", error);
-      }
-      setRecognition(null);
-    }
     setIsRecording(false);
+
+    if (sourceRecognition) {
+      try {
+        sourceRecognition.stop();
+      } catch (error) {
+        console.error("Error stopping source recognition:", error);
+      }
+    }
+
+    if (englishRecognition) {
+      try {
+        englishRecognition.stop();
+      } catch (error) {
+        console.error("Error stopping English recognition:", error);
+      }
+    }
 
     if (currentTranscript || englishTranscript) {
       onTranslationComplete({
@@ -188,7 +211,7 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
          'english']: currentTranscript
       });
     }
-    setShowRecordingEnded(true);
+
     toast({
       title: "Recording Ended",
       description: "Processing your speech...",
