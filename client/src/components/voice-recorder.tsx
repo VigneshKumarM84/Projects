@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +42,18 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       .catch(() => setHasMicPermission(false));
   }, [toast]);
 
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (sourceRecognition) {
+        sourceRecognition.stop();
+      }
+      if (englishRecognition) {
+        englishRecognition.stop();
+      }
+    };
+  }, [sourceRecognition, englishRecognition]);
+
   const startRecording = async () => {
     if (!hasMicPermission) {
       try {
@@ -67,6 +79,7 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
       return;
     }
 
+    // Initialize new recognition instances
     const newSourceRecognition = new SpeechRecognitionAPI();
     const newEnglishRecognition = new SpeechRecognitionAPI();
 
@@ -87,6 +100,8 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     // Source recognition event handlers
     newSourceRecognition.onstart = () => {
       setIsRecording(true);
+      setCurrentTranscript('');
+      setEnglishTranscript('');
       toast({
         title: "Recording Started",
         description: `Speak in ${
@@ -100,7 +115,6 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     };
 
     newSourceRecognition.onend = () => {
-      // Restart recognition if we're still supposed to be recording
       if (isRecording) {
         try {
           newSourceRecognition.start();
@@ -111,14 +125,16 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     };
 
     newSourceRecognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0].transcript)
-        .join(" ")
-        .trim();
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          transcript += event.results[i][0].transcript + ' ';
+        }
+      }
+      transcript = transcript.trim();
 
-      setCurrentTranscript(transcript);
-
-      if (event.results[0].isFinal) {
+      if (transcript) {
+        setCurrentTranscript(transcript);
         onTranslationComplete({
           sourceText: transcript,
           englishRecognition: englishTranscript,
@@ -133,7 +149,6 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
 
     // English recognition event handlers
     newEnglishRecognition.onend = () => {
-      // Restart recognition if we're still supposed to be recording
       if (isRecording) {
         try {
           newEnglishRecognition.start();
@@ -144,17 +159,27 @@ export function VoiceRecorder({ sourceLanguage, onTranslationComplete }: VoiceRe
     };
 
     newEnglishRecognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0].transcript)
-        .join(" ")
-        .trim();
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          transcript += event.results[i][0].transcript + ' ';
+        }
+      }
+      transcript = transcript.trim();
 
-      setEnglishTranscript(transcript);
+      if (transcript) {
+        setEnglishTranscript(transcript);
+      }
     };
 
     // Error handlers
     const handleError = (error: any) => {
       console.error('Recognition error:', error);
+      // Ignore "no-speech" errors as they're common and not critical
+      if (error.error === 'no-speech') {
+        return;
+      }
+
       toast({
         variant: "destructive",
         title: "Recording Error",
